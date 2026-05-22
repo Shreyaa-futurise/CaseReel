@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="application-name" content="CaseReel">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CaseReel">
+<meta name="theme-color" content="#00C896">
+<link rel="manifest" href="manifest.json">
+<title>CaseReel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A0F;--surface:#111118;--surface2:#18181F;--border:#252530;--border2:#32323F;
+  --text:#F0F0F8;--muted:#6B6B80;--hint:#3A3A4A;
+  /* CaseReel accent */
+  --cr:#00C896;--cr-dim:#003D2E;
+  /* Talking Head accent */
+  --th:#7C3AED;--th-dim:#1E0A3C;--th-light:#A78BFA;
+  /* BTS accent */
+  --bts:#14B8A6;--bts-dim:#0A2E2A;
+  /* Status */
+  --amber:#F5A623;--amber-dim:#3D2800;
+  --coral:#FF6B6B;--coral-dim:#3D1010;
+  --pink:#EC4899;--pink-dim:#3D0A1F;
+  --green:#10B981;--green-dim:#0A2E1C;
+  --blue:#3B82F6;--blue-dim:#0A1F3D;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+h1,h2,h3,h4{font-family:'Syne',sans-serif;font-weight:600}
+input,textarea,select,button{font-family:'DM Sans',sans-serif;font-size:14px}
+.hidden{display:none!important}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+
+/* STAGE / STATUS TAGS */
+.s-collect{background:var(--coral-dim);color:var(--coral)}
+.s-document{background:var(--amber-dim);color:var(--amber)}
+.s-script,.s-scripting{background:var(--th-dim);color:var(--th-light)}
+.s-voiceover{background:var(--blue-dim);color:var(--blue)}
+.s-ready{background:var(--green-dim);color:var(--green)}
+.s-idea{background:#1A1A2E;color:var(--muted)}
+.s-shooting{background:var(--amber-dim);color:var(--amber)}
+.s-editing{background:var(--pink-dim);color:var(--pink)}
+
+/* SECTION ACCENT TAGS */
+.sec-cr{background:var(--cr-dim);color:var(--cr)}
+.sec-th{background:var(--th-dim);color:var(--th-light)}
+.sec-bts{background:var(--bts-dim);color:var(--bts)}
+
+/* BUTTONS */
+.btn{padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:500;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+.btn:active{transform:scale(.98)}
+.btn-cr{background:var(--cr);color:#000}
+.btn-th{background:var(--th);color:#fff}
+.btn-bts{background:var(--bts);color:#000}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}
+.btn-full{width:100%}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px}
+.login-box{width:380px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px}
+.login-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.login-logo span{color:var(--cr)}
+.login-sub{color:var(--muted);font-size:13px;margin-bottom:28px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase}
+.field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);outline:none;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cr)}
+.field textarea{resize:vertical;min-height:80px}
+.auth-toggle{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;cursor:pointer}
+.auth-toggle span{color:var(--cr)}
+
+/* APP SHELL */
+#app{display:none;flex-direction:column;min-height:100vh}
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:14px;height:56px;position:sticky;top:0;z-index:100}
+.nav-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)}
+.nav-logo span{color:var(--cr)}
+.nav-divider{width:1px;height:20px;background:var(--border);margin:0 2px}
+.nav-live{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.nav-user{margin-left:auto;display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--cr-dim);color:var(--cr);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+
+/* SECTION TABS */
+.section-tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:0;padding:0 28px}
+.sec-tab{padding:12px 20px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;display:flex;align-items:center;gap:7px}
+.sec-tab:hover{color:var(--text)}
+.sec-tab.active-cr{color:var(--cr);border-bottom-color:var(--cr)}
+.sec-tab.active-th{color:var(--th-light);border-bottom-color:var(--th)}
+.sec-tab.active-bts{color:var(--bts);border-bottom-color:var(--bts)}
+.sec-tab.active-posted{color:#10B981;border-bottom-color:#10B981}
+.sec-tab.active-carousel{color:#A78BFA;border-bottom-color:#8B5CF6}
+.tab-carousel{color:var(--muted)}
+.tab-carousel.active{color:#8B5CF6;border-bottom-color:#8B5CF6}
+.sec-dot{width:7px;height:7px;border-radius:50%}
+.dot-cr{background:var(--cr)}
+.dot-th{background:var(--th-light)}
+.dot-bts{background:var(--bts)}
+
+/* MAIN */
+.main{flex:1;padding:32px 28px;max-width:1200px;width:100%;margin:0 auto}
+.section-pane{display:none}
+.section-pane.active{display:block}
+
+/* DASHBOARD SHARED */
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.dash-title{font-size:26px;margin-bottom:4px}
+.dash-sub{color:var(--muted);font-size:13px}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+.stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;margin-bottom:2px}
+.stat-label{font-size:11px;color:var(--muted)}
+.pipeline-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.p-btn{padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s}
+.p-btn:hover{border-color:var(--border2);color:var(--text)}
+.p-btn.act-cr{border-color:var(--cr);color:var(--cr);background:var(--cr-dim)}
+.p-btn.act-th{border-color:var(--th);color:var(--th-light);background:var(--th-dim)}
+.p-btn.act-bts{border-color:var(--bts);color:var(--bts);background:var(--bts-dim)}
+.cases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.case-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;transition:border-color .15s,transform .12s}
+.case-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.card-id{font-size:11px;color:var(--hint)}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap}
+.card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;margin-bottom:3px;line-height:1.3}
+.card-meta{font-size:12px;color:var(--muted);margin-bottom:3px}
+.card-desc{font-size:12px;color:var(--hint)}
+.prog-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;margin-top:12px}
+.prog-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px}
+.fill-cr{background:var(--cr)}
+.fill-th{background:var(--th-light)}
+.fill-bts{background:var(--bts)}
+.card-foot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;font-size:11px}
+
+/* DETAIL SHARED */
+.detail-view{display:none}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:20px;border:none;background:none}
+.back-btn:hover{color:var(--text)}
+.det-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.det-title{font-size:28px;margin-bottom:6px}
+.det-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab{padding:10px 18px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text)}
+.tab-cr.active{border-bottom-color:var(--cr)}
+.tab-th.active{border-bottom-color:var(--th)}
+.tab-bts.active{border-bottom-color:var(--bts)}
+.tc{display:none}
+.tc.active{display:block}
+
+/* INFO CARDS */
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+.info-card h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.info-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.ik{color:var(--muted)}
+.iv{color:var(--text);text-align:right}
+.full-w{grid-column:1/-1}
+.notes-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;grid-column:1/-1}
+.notes-box h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.notes-text{font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap}
+
+/* MEDIA */
+.media-sec{margin-bottom:24px}
+.media-sec-lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:8px}
+.m-thumb{aspect-ratio:1;border-radius:10px;border:1px solid var(--border);background:var(--surface2);overflow:hidden;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.m-thumb:hover{border-color:var(--border2)}
+.m-thumb img,.m-thumb video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.m-lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);padding:4px 7px;font-size:10px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-icon{font-size:26px;opacity:.3}
+.m-del{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(255,60,60,.85);border-radius:4px;display:none;align-items:center;justify-content:center;font-size:11px;color:white;cursor:pointer;z-index:2}
+.m-thumb:hover .m-del{display:flex}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s}
+.upload-zone:hover{border-color:var(--cr)}
+.upload-zone input{display:none}
+.upload-zone p{font-size:13px;color:var(--muted);margin-top:8px}
+.upload-zone .sub{font-size:11px;color:var(--hint)}
+.up-prog{width:100%;height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
+.up-bar{height:100%;background:var(--cr);border-radius:2px;transition:width .2s}
+
+/* SCRIPT / EDITOR */
+.script-ed{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.ed-top{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.ed-top span{font-size:12px;color:var(--muted)}
+.ed-body textarea{width:100%;background:transparent;border:none;color:var(--text);outline:none;font-size:14px;line-height:1.9;min-height:280px;resize:none;padding:20px;font-family:'DM Sans',sans-serif}
+.ed-foot{padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--hint)}
+
+/* EDITING POINTS */
+.ep-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ep-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.ep-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ep-cr{background:var(--cr-dim);color:var(--cr)}
+.ep-th{background:var(--th-dim);color:var(--th-light)}
+.ep-bts{background:var(--bts-dim);color:var(--bts)}
+.ep-text{flex:1;font-size:13px;color:var(--text);line-height:1.5}
+.ep-del{color:var(--coral);cursor:pointer;font-size:12px;opacity:.6;flex-shrink:0}
+.ep-del:hover{opacity:1}
+.ep-add{display:flex;gap:8px}
+.ep-add input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);outline:none}
+
+/* REFS & DRIVE */
+.ref-sec{margin-bottom:24px}
+.ref-sec h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.ref-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.ref-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px}
+.ref-item a{flex:1;font-size:12px;color:var(--th-light);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-item a:hover{text-decoration:underline}
+.ref-del{font-size:11px;color:var(--coral);cursor:pointer;opacity:.6}
+.ref-del:hover{opacity:1}
+.ref-add{display:flex;gap:8px}
+.ref-add input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);outline:none;font-size:13px}
+.drive-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.drive-icon{width:36px;height:36px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.drive-empty{border:1.5px dashed var(--border2);border-radius:14px;padding:16px;display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.drive-inp-row{display:flex;gap:8px}
+.drive-inp-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);outline:none;font-size:13px}
+
+/* VO */
+.vo-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:14px}
+.vo-box h4{font-size:13px;font-weight:600;margin-bottom:16px}
+.vo-file-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.vo-file-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px 14px;font-size:13px}
+.vo-file-item span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notes-ed{background:var(--surface2);border-radius:10px;padding:14px 16px}
+.notes-ed textarea{width:100%;background:transparent;border:none;color:var(--text);outline:none;font-size:13px;min-height:90px;resize:none;font-family:'DM Sans',sans-serif}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:20px;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.mfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.s2{grid-column:1/-1}
+.stage-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.so{padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;text-align:center}
+.so:hover{border-color:var(--border2)}
+.so.sel-cr{border-color:var(--cr);background:var(--cr-dim);color:var(--cr)}
+.so.sel-th{border-color:var(--th);background:var(--th-dim);color:var(--th-light)}
+.so.sel-bts{border-color:var(--bts);background:var(--bts-dim);color:var(--bts)}
+.fmt-sel{display:flex;flex-direction:column;gap:8px}
+.fo{padding:12px 16px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s;font-size:13px}
+.fo:hover{border-color:var(--border2)}
+.fo.sel-th{border-color:var(--th);background:var(--th-dim);color:var(--th-light)}
+.fo .fd{font-size:11px;color:var(--muted);margin-top:3px}
+.fo.sel-th .fd{color:var(--th-light);opacity:.7}
+.cat-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.co{padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s;font-size:12px;font-weight:500;text-align:center}
+.co.sel-bts{border-color:var(--bts);background:var(--bts-dim);color:var(--bts)}
+
+/* LIGHTBOX */
+#lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:500;align-items:center;justify-content:center;flex-direction:column}
+.lb-top{position:absolute;top:16px;right:16px;display:flex;gap:8px;z-index:2}
+.lb-fn{color:rgba(255,255,255,.45);font-size:12px;padding:7px 12px;background:rgba(255,255,255,.07);border-radius:8px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-x{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.1);border:none;color:white;font-size:16px;cursor:pointer}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:white;font-size:20px;cursor:pointer}
+#lb-prev{left:16px}#lb-next{right:16px}
+#lb-content{max-width:90vw;max-height:83vh;display:flex;align-items:center;justify-content:center}
+#lb-counter{margin-top:10px;font-size:12px;color:rgba(255,255,255,.3)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:11px 20px;font-size:13px;z-index:999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.success{border-color:var(--green);color:var(--green)}
+#toast.info{border-color:var(--blue);color:var(--blue)}
+#toast.error{border-color:var(--coral);color:var(--coral)}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--cr);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.active-posted{color:var(--green)!important;border-bottom-color:var(--green)!important}
+
+/* ── EDITOR APP ── */
+#editor-app{display:none;flex-direction:column;min-height:100vh}
+.ed-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:14px;height:56px;position:sticky;top:0;z-index:100}
+.ed-nav-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.ed-nav-logo span{color:var(--pink)}
+.ed-role-pill{background:var(--pink-dim);color:var(--pink);font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.ed-main{flex:1;padding:28px;max-width:1100px;margin:0 auto;width:100%}
+.ed-section-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:600;margin-bottom:4px}
+.ed-section-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.ed-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.ed-tab{padding:10px 18px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.ed-tab:hover{color:var(--text)}
+.ed-tab.act{color:var(--pink);border-bottom-color:var(--pink)}
+.ed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:28px}
+.ed-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:border-color .15s}
+.ed-card:hover{border-color:var(--border2)}
+.ed-card-id{font-size:11px;color:var(--hint);margin-bottom:4px}
+.ed-card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.3}
+.ed-card-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.ed-card-foot{display:flex;gap:6px;flex-wrap:wrap}
+.ed-detail{display:none}
+.ed-detail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.ed-info-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+.ed-info-block h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.ed-script-box{background:var(--surface2);border-radius:10px;padding:16px 18px;font-size:14px;color:var(--text);line-height:1.9;white-space:pre-wrap;min-height:80px}
+.ed-ep-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:7px}
+.ed-ep-num{width:22px;height:22px;border-radius:50%;background:var(--pink-dim);color:var(--pink);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ed-ep-text{flex:1;font-size:13px;color:var(--text);line-height:1.5}
+.ed-final-box{background:var(--surface);border:1px solid var(--green);border-radius:14px;padding:18px;margin-bottom:14px}
+.ed-final-box h4{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--green);margin-bottom:12px}
+.ed-final-inp{display:flex;gap:8px}
+.ed-final-inp input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);outline:none;font-size:13px;transition:border-color .15s}
+.ed-final-inp input:focus{border-color:var(--green)}
+.ed-drive-link{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:12px 14px}
+.ed-drive-link a{color:var(--green);font-size:13px;text-decoration:none;flex:1}
+.ed-drive-link a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Case<span>Reel</span></div>
+    <div class="login-sub">Doctor's content production system</div>
+    <div class="field"><label>Email</label><input type="email" id="le" placeholder="you@clinic.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="lp" placeholder="••••••••"></div>
+    <button class="btn btn-cr btn-full" id="auth-btn" onclick="doAuth()" style="margin-top:4px">Sign in</button>
+    <div class="auth-toggle" onclick="toggleAuth()" id="auth-toggle">Don't have an account? <span>Sign up</span></div>
+    <div id="auth-err" style="margin-top:10px;font-size:12px;color:var(--coral);text-align:center"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topnav">
+    <div class="nav-logo">Case<span>Reel</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-live"><div class="nav-dot"></div> Live</div>
+    <div class="nav-user">
+      <span style="font-size:13px;color:var(--muted)" id="nav-email"></span>
+      <div class="avatar" id="nav-av">?</div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- SECTION TABS -->
+  <div class="section-tabs">
+    <button class="sec-tab active-cr" id="tab-cr" onclick="switchSection('cr')">
+      <div class="sec-dot dot-cr"></div> Case Library
+    </button>
+    <button class="sec-tab" id="tab-th" onclick="switchSection('th')">
+      <div class="sec-dot dot-th"></div> Talking Head
+    </button>
+    <button class="sec-tab" id="tab-bts" onclick="switchSection('bts')">
+      <div class="sec-dot dot-bts"></div> BTS
+    </button>
+    <button class="sec-tab" id="tab-carousel" onclick="switchSection('carousel')">
+      <div class="sec-dot" style="background:#8B5CF6"></div> Carousels
+      <span id="carousel-cnt" style="background:rgba(139,92,246,.15);color:#A78BFA;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:2px"></span>
+    </button>
+    <button class="sec-tab" id="tab-posted" onclick="switchSection('posted')">
+      <div class="sec-dot" style="background:#10B981"></div> Posted ✓
+      <span id="posted-cnt" style="background:rgba(16,185,129,.15);color:#10B981;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:4px">0</span>
+    </button>
+  </div>
+
+  <div class="main">
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION: CASE LIBRARY
+    ═══════════════════════════════════════════════ -->
+    <div class="section-pane active" id="sec-cr">
+      <div id="cr-dash">
+        <div class="dash-header">
+          <div><h1 class="dash-title">Case library</h1><div class="dash-sub" id="cr-sub">Loading...</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadCases()">↻ Refresh</button>
+            <button class="btn btn-cr btn-sm" onclick="openNewCase()">+ New case</button>
+          </div>
+        </div>
+        <div class="stats-row" id="cr-stats"></div>
+        <div class="pipeline-bar" id="cr-pipe"></div>
+        <div class="cases-grid" id="cr-grid"></div>
+      </div>
+
+      <div class="detail-view" id="cr-detail">
+        <button class="back-btn" onclick="showCrDash()">← All cases</button>
+        <div class="det-header">
+          <div>
+            <div style="font-size:12px;color:var(--hint);margin-bottom:4px" id="cr-det-id"></div>
+            <h1 class="det-title" id="cr-det-name"></h1>
+            <div class="det-meta" id="cr-det-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="openCrStage()">Change stage</button>
+            <button class="btn btn-cr btn-sm" onclick="openEditCase()">Edit details</button>
+            <button class="btn btn-sm" id="cr-posted-btn" style="background:var(--green);color:#000" onclick="markAsPosted('cr')">✓ Mark as posted</button>
+          </div>
+        </div>
+        <!-- DRIVE LINK CARD - Case Library -->
+        <div id="cr-drive-section" style="margin-bottom:18px">
+          <div id="cr-drive-linked" style="display:none;background:var(--surface);border:1.5px solid var(--green);border-radius:14px;padding:14px 18px;display:none;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📁</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px">Google Drive folder linked</div>
+              <div id="cr-drive-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="cr-drive-open-btn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:var(--green);color:#000;flex-shrink:0;text-decoration:none">Open folder ↗</a>
+            <button class="btn btn-ghost btn-sm" onclick="saveCrDrive('')" style="flex-shrink:0">Remove</button>
+          </div>
+          <div id="cr-drive-empty" style="background:var(--surface);border:1.5px dashed var(--border2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">Link Google Drive folder</div>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="cr-drive-inp" placeholder="Paste Google Drive folder URL..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+                <button class="btn btn-cr btn-sm" onclick="saveCrDriveFromInput()">Save link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs" id="cr-tabs">
+          <button class="tab tab-cr active" onclick="showTC('cr','details',this)">Details</button>
+          <button class="tab tab-cr" onclick="showTC('cr','media',this)">Media <span id="cr-mc" style="font-size:11px;opacity:.6"></span></button>
+          <button class="tab tab-cr" onclick="showTC('cr','script',this)">Script</button>
+          <button class="tab tab-cr" onclick="showTC('cr','voiceover',this)">Voiceover</button>
+        </div>
+        <div class="tc active" id="cr-tc-details">
+          <div class="ov-grid">
+            <div class="info-card"><h4>Patient info</h4>
+              <div class="info-row"><span class="ik">Age</span><span class="iv" id="cr-age">—</span></div>
+              <div class="info-row"><span class="ik">Gender</span><span class="iv" id="cr-gender">—</span></div>
+              <div class="info-row"><span class="ik">Days admitted</span><span class="iv" id="cr-days">—</span></div>
+              <div class="info-row"><span class="ik">Case date</span><span class="iv" id="cr-date">—</span></div>
+            </div>
+            <div class="info-card"><h4>Clinical summary</h4>
+              <div class="info-row"><span class="ik">Problem</span><span class="iv" id="cr-problem">—</span></div>
+              <div class="info-row"><span class="ik">Cause</span><span class="iv" id="cr-cause">—</span></div>
+              <div class="info-row"><span class="ik">Treatment</span><span class="iv" id="cr-treatment">—</span></div>
+              <div class="info-row"><span class="ik">Result</span><span class="iv" id="cr-result">—</span></div>
+            </div>
+            <div class="notes-box"><h4>Full notes</h4><div class="notes-text" id="cr-notes">—</div></div>
+            <div id="cr-final-admin" style="display:none;background:var(--surface2);border:1.5px solid var(--green);border-radius:12px;padding:14px 16px;align-items:center;gap:12px">
+              <span style="font-size:20px">📹</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:2px">Editor submitted final video</div>
+                <div id="cr-final-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              </div>
+              <a id="cr-final-open-btn" href="#" target="_blank" style="background:var(--green);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;flex-shrink:0">Open ↗</a>
+            </div>
+          </div>
+        </div>
+          <div class="media-sec"><div class="media-sec-lbl">📷 Photos</div><div class="media-grid" id="cr-photos"></div></div>
+          <div class="media-sec"><div class="media-sec-lbl">🎬 Videos</div><div class="media-grid" id="cr-videos"></div></div>
+          <div class="media-sec"><div class="media-sec-lbl">📄 Documents & prescriptions</div><div class="media-grid" id="cr-docs"></div></div>
+          <label class="upload-zone">
+            <input type="file" multiple onchange="handleCrUpload(event)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin:0 auto;display:block"><path d="M12 16V8M8 12l4-4 4 4" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="var(--border2)" stroke-width="1"/></svg>
+            <p>Drop files or click to browse</p>
+            <div class="sub">Saved to cloud — visible to everyone</div>
+            <div class="up-prog" id="cr-uprog"><div class="up-bar" id="cr-ubar" style="width:0%"></div></div>
+          </label>
+        </div>
+        <div class="tc" id="cr-tc-script">
+          <div class="script-ed">
+            <div class="ed-top"><span>Content script</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="saveCrScript()">Save</button></div>
+            <div class="ed-body"><textarea id="cr-script-ta" placeholder="Write the content script here..."></textarea></div>
+            <div class="ed-foot"><span id="cr-wc">0 words</span><span id="cr-ss" style="color:var(--green)"></span></div>
+          </div>
+        </div>
+        <div class="tc" id="cr-tc-voiceover">
+          <div class="vo-box">
+            <h4>Voiceover files</h4>
+            <div class="vo-file-list" id="cr-vo-list"></div>
+            <label class="upload-zone" style="padding:16px">
+              <input type="file" accept="audio/*" multiple onchange="handleCrVo(event)" style="display:none">
+              <p style="margin:0;font-size:13px;color:var(--muted)">Upload audio — saved to cloud</p>
+            </label>
+          </div>
+          <div class="vo-box">
+            <h4>Voiceover notes</h4>
+            <div class="notes-ed"><textarea id="cr-vo-notes" placeholder="Tone, emphasis, timing cues..."></textarea></div>
+            <button class="btn btn-cr btn-sm" style="margin-top:12px" onclick="saveCrVoNotes()">Save notes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION: TALKING HEAD
+    ═══════════════════════════════════════════════ -->
+    <div class="section-pane" id="sec-th">
+      <div id="th-dash">
+        <div class="dash-header">
+          <div><h1 class="dash-title">Talking Head library</h1><div class="dash-sub" id="th-sub">Loading...</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadStudio('th')">↻ Refresh</button>
+            <button class="btn btn-sm" style="background:var(--th);color:#fff" onclick="openNewStudio('th')">+ New content</button>
+          </div>
+        </div>
+        <div class="stats-row" id="th-stats"></div>
+        <div class="pipeline-bar" id="th-pipe"></div>
+        <div class="cases-grid" id="th-grid"></div>
+      </div>
+      <div class="detail-view" id="th-detail">
+        <button class="back-btn" onclick="showStudioDash('th')">← Talking Head</button>
+        <div class="det-header">
+          <div>
+            <div style="font-size:12px;color:var(--hint);margin-bottom:4px" id="th-det-id"></div>
+            <h1 class="det-title" id="th-det-name"></h1>
+            <div class="det-meta" id="th-det-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="openStudioStage('th')">Change stage</button>
+            <button class="btn btn-sm" style="background:var(--th);color:#fff" onclick="openEditStudio('th')">Edit</button>
+            <button class="btn btn-sm" id="th-posted-btn" style="background:var(--green);color:#000" onclick="markAsPosted('th')">✓ Mark as posted</button>
+          </div>
+        </div>
+        <!-- DRIVE LINK CARD - Talking Head -->
+        <div id="th-drive-section" style="margin-bottom:18px">
+          <div id="th-drive-linked" style="display:none;background:var(--surface);border:1.5px solid var(--green);border-radius:14px;padding:14px 18px;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📁</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px">Google Drive folder linked</div>
+              <div id="th-drive-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="th-drive-open-btn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:var(--green);color:#000;flex-shrink:0;text-decoration:none">Open folder ↗</a>
+            <button class="btn btn-ghost btn-sm" onclick="quickClearDrive('th')" style="flex-shrink:0">Remove</button>
+          </div>
+          <div id="th-drive-empty-top" style="background:var(--surface);border:1.5px dashed var(--border2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">Link Google Drive folder</div>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="th-drive-inp-top" placeholder="Paste Google Drive folder URL..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+                <button class="btn btn-sm" style="background:var(--th);color:#fff" onclick="quickSaveDrive('th')">Save link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab tab-th active" onclick="showTC('th','overview',this)">Overview</button>
+          <button class="tab tab-th" onclick="showTC('th','script',this)">Script</button>
+          <button class="tab tab-th" onclick="showTC('th','editing',this)">Editing points</button>
+          <button class="tab tab-th" onclick="showTC('th','refs',this)">References & Drive</button>
+        </div>
+        <div class="tc active" id="th-tc-overview">
+          <div id="th-final-admin" style="display:none;background:var(--surface2);border:1.5px solid var(--green);border-radius:12px;padding:14px 16px;align-items:center;gap:12px;margin-bottom:14px">
+            <span style="font-size:20px">📹</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:2px">Editor submitted final video</div>
+              <div id="th-final-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="th-final-open-btn" href="#" target="_blank" style="background:var(--green);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;flex-shrink:0">Open ↗</a>
+          </div>
+          <div class="ov-grid" id="th-ov-grid"></div></div>
+        <div class="tc" id="th-tc-script">
+          <div class="script-ed">
+            <div class="ed-top"><span id="th-script-lbl">Script</span><span id="th-audio-pill" class="hidden" style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--blue-dim);color:var(--blue)">Audio + B-roll</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="saveStudioScript('th')">Save</button></div>
+            <div class="ed-body"><textarea id="th-script-ta" placeholder="Script or shot list..."></textarea></div>
+            <div class="ed-foot"><span id="th-wc">0 words</span><span id="th-ss" style="color:var(--green)"></span></div>
+          </div>
+        </div>
+        <div class="tc" id="th-tc-editing">
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font-size:15px;font-weight:600">Editing points</span><span style="font-size:12px;color:var(--muted)">Instructions for editor</span></div>
+          <div class="ep-list" id="th-ep-list"></div>
+          <div class="ep-add"><input type="text" id="th-ep-inp" placeholder="Add editing point..." onkeydown="if(event.key==='Enter')addEP('th')"><button class="btn btn-sm" style="background:var(--th);color:#fff" onclick="addEP('th')">Add</button></div>
+        </div>
+        <div class="tc" id="th-tc-refs" class="refs-pane"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION: BTS
+    ═══════════════════════════════════════════════ -->
+    <div class="section-pane" id="sec-bts">
+      <div id="bts-dash">
+        <div class="dash-header">
+          <div><h1 class="dash-title">BTS library</h1><div class="dash-sub" id="bts-sub">Loading...</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadStudio('bts')">↻ Refresh</button>
+            <button class="btn btn-sm" style="background:var(--bts);color:#000" onclick="openNewStudio('bts')">+ New content</button>
+          </div>
+        </div>
+        <div class="stats-row" id="bts-stats"></div>
+        <div class="pipeline-bar" id="bts-pipe"></div>
+        <div class="cases-grid" id="bts-grid"></div>
+      </div>
+      <div class="detail-view" id="bts-detail">
+        <button class="back-btn" onclick="showStudioDash('bts')">← BTS</button>
+        <div class="det-header">
+          <div>
+            <div style="font-size:12px;color:var(--hint);margin-bottom:4px" id="bts-det-id"></div>
+            <h1 class="det-title" id="bts-det-name"></h1>
+            <div class="det-meta" id="bts-det-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="openStudioStage('bts')">Change stage</button>
+            <button class="btn btn-sm" style="background:var(--bts);color:#000" onclick="openEditStudio('bts')">Edit</button>
+            <button class="btn btn-sm" id="bts-posted-btn" style="background:var(--green);color:#000" onclick="markAsPosted('bts')">✓ Mark as posted</button>
+          </div>
+            <button class="btn btn-sm" style="background:var(--bts);color:#000" onclick="openEditStudio('bts')">Edit</button>
+          </div>
+        </div>
+        <!-- DRIVE LINK CARD - BTS -->
+        <div id="bts-drive-section" style="margin-bottom:18px">
+          <div id="bts-drive-linked" style="display:none;background:var(--surface);border:1.5px solid var(--green);border-radius:14px;padding:14px 18px;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📁</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px">Google Drive folder linked</div>
+              <div id="bts-drive-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="bts-drive-open-btn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:var(--green);color:#000;flex-shrink:0;text-decoration:none">Open folder ↗</a>
+            <button class="btn btn-ghost btn-sm" onclick="quickClearDrive('bts')" style="flex-shrink:0">Remove</button>
+          </div>
+          <div id="bts-drive-empty-top" style="background:var(--surface);border:1.5px dashed var(--border2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">Link Google Drive folder</div>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="bts-drive-inp-top" placeholder="Paste Google Drive folder URL..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+                <button class="btn btn-sm" style="background:var(--bts);color:#000" onclick="quickSaveDrive('bts')">Save link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab tab-bts active" onclick="showTC('bts','overview',this)">Overview</button>
+          <button class="tab tab-bts" onclick="showTC('bts','script',this)">Shot list</button>
+          <button class="tab tab-bts" onclick="showTC('bts','editing',this)">Editing points</button>
+          <button class="tab tab-bts" onclick="showTC('bts','refs',this)">References & Drive</button>
+        </div>
+        <div class="tc active" id="bts-tc-overview">
+          <div id="bts-final-admin" style="display:none;background:var(--surface2);border:1.5px solid var(--green);border-radius:12px;padding:14px 16px;align-items:center;gap:12px;margin-bottom:14px">
+            <span style="font-size:20px">📹</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:2px">Editor submitted final video</div>
+              <div id="bts-final-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="bts-final-open-btn" href="#" target="_blank" style="background:var(--green);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;flex-shrink:0">Open ↗</a>
+          </div>
+          <div class="ov-grid" id="bts-ov-grid"></div></div>
+        <div class="tc" id="bts-tc-script">
+          <div class="script-ed">
+            <div class="ed-top"><span>Shot list / script</span><button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="saveStudioScript('bts')">Save</button></div>
+            <div class="ed-body"><textarea id="bts-script-ta" placeholder="Shot list and key moments to capture..."></textarea></div>
+            <div class="ed-foot"><span id="bts-wc">0 words</span><span id="bts-ss" style="color:var(--green)"></span></div>
+          </div>
+        </div>
+        <div class="tc" id="bts-tc-editing">
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font-size:15px;font-weight:600">Editing points</span><span style="font-size:12px;color:var(--muted)">Instructions for editor</span></div>
+          <div class="ep-list" id="bts-ep-list"></div>
+          <div class="ep-add"><input type="text" id="bts-ep-inp" placeholder="Add editing point..." onkeydown="if(event.key==='Enter')addEP('bts')"><button class="btn btn-sm" style="background:var(--bts);color:#000" onclick="addEP('bts')">Add</button></div>
+        </div>
+        <div class="tc" id="bts-tc-refs"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION: CAROUSEL
+    ═══════════════════════════════════════════════ -->
+    <div class="section-pane" id="sec-carousel">
+      <div id="carousel-dash">
+        <div class="dash-header">
+          <div><h1 class="dash-title">Carousel library</h1><div class="dash-sub" id="carousel-sub">Loading...</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="loadStudio('carousel')">↻ Refresh</button>
+            <button class="btn btn-sm" style="background:#8B5CF6;color:#fff" onclick="openNewStudio('carousel')">+ New carousel</button>
+          </div>
+        </div>
+        <div class="stats-row" id="carousel-stats"></div>
+        <div class="pipeline-bar" id="carousel-pipe"></div>
+        <div class="cases-grid" id="carousel-grid"></div>
+      </div>
+      <div class="detail-view" id="carousel-detail">
+        <button class="back-btn" onclick="showStudioDash('carousel')">← Carousels</button>
+        <div class="det-header">
+          <div>
+            <div style="font-size:12px;color:var(--hint);margin-bottom:4px" id="carousel-det-id"></div>
+            <h1 class="det-title" id="carousel-det-name"></h1>
+            <div class="det-meta" id="carousel-det-meta"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="openStudioStage('carousel')">Change stage</button>
+            <button class="btn btn-sm" style="background:#8B5CF6;color:#fff" onclick="openEditStudio('carousel')">Edit</button>
+            <button class="btn btn-sm" id="carousel-posted-btn" style="background:var(--green);color:#000" onclick="markAsPosted('carousel')">✓ Mark as posted</button>
+          </div>
+        </div>
+
+        <!-- DRIVE LINK -->
+        <div id="carousel-drive-section" style="margin-bottom:18px">
+          <div id="carousel-drive-linked" style="display:none;background:var(--surface);border:1.5px solid var(--green);border-radius:14px;padding:14px 18px;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📁</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px">Google Drive folder linked</div>
+              <div id="carousel-drive-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="carousel-drive-open-btn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:var(--green);color:#000;flex-shrink:0;text-decoration:none">Open folder ↗</a>
+            <button class="btn btn-ghost btn-sm" onclick="quickClearDrive('carousel')" style="flex-shrink:0">Remove</button>
+          </div>
+          <div id="carousel-drive-empty-top" style="background:var(--surface);border:1.5px dashed var(--border2);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">Link Google Drive folder</div>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="carousel-drive-inp-top" placeholder="Paste Google Drive folder URL..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+                <button class="btn btn-sm" style="background:#8B5CF6;color:#fff" onclick="quickSaveDrive('carousel')">Save link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab tab-carousel active" onclick="showTC('carousel','overview',this)" style="--tab-color:#8B5CF6">Overview</button>
+          <button class="tab tab-carousel" onclick="showTC('carousel','copy',this)" style="--tab-color:#8B5CF6">Copy / Caption</button>
+          <button class="tab tab-carousel" onclick="showTC('carousel','visuals',this)" style="--tab-color:#8B5CF6">Visuals</button>
+          <button class="tab tab-carousel" onclick="showTC('carousel','editing',this)" style="--tab-color:#8B5CF6">Design guidelines</button>
+        </div>
+
+        <!-- OVERVIEW TAB -->
+        <div class="tc active" id="carousel-tc-overview">
+          <div id="carousel-final-admin" style="display:none;background:var(--surface2);border:1.5px solid var(--green);border-radius:12px;padding:14px 16px;align-items:center;gap:12px;margin-bottom:14px">
+            <span style="font-size:20px">🖼️</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:2px">Designer submitted final carousel</div>
+              <div id="carousel-final-url-display" style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+            </div>
+            <a id="carousel-final-open-btn" href="#" target="_blank" style="background:var(--green);color:#000;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;flex-shrink:0">Open ↗</a>
+          </div>
+          <div class="ov-grid" id="carousel-ov-grid"></div>
+        </div>
+
+        <!-- COPY / CAPTION TAB -->
+        <div class="tc" id="carousel-tc-copy">
+          <div class="script-ed">
+            <div class="ed-top">
+              <span>Caption / Copy</span>
+              <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="saveStudioScript('carousel')">Save</button>
+            </div>
+            <div class="ed-body"><textarea id="carousel-script-ta" placeholder="Write the carousel caption, hooks, slide copy here..."></textarea></div>
+            <div class="ed-foot"><span id="carousel-wc">0 words</span><span id="carousel-ss" style="color:var(--green)"></span></div>
+          </div>
+        </div>
+
+        <!-- VISUALS TAB -->
+        <div class="tc" id="carousel-tc-visuals">
+          <div class="media-sec"><div class="media-sec-lbl">🖼️ Slide images / designs</div><div class="media-grid" id="carousel-photos"></div></div>
+          <div class="media-sec"><div class="media-sec-lbl">📄 Reference docs / PDFs</div><div class="media-grid" id="carousel-docs"></div></div>
+          <label class="upload-zone">
+            <input type="file" multiple accept="image/*,.pdf,.png,.jpg,.jpeg" onchange="handleCarouselUpload(event)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin:0 auto;display:block"><path d="M12 16V8M8 12l4-4 4 4" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="var(--border2)" stroke-width="1"/></svg>
+            <p>Drop files or click to browse</p>
+            <div class="sub">Slides, reference images, PDFs — saved to cloud</div>
+            <div class="up-prog" id="carousel-uprog"><div class="up-bar" id="carousel-ubar" style="width:0%"></div></div>
+          </label>
+        </div>
+
+        <!-- DESIGN GUIDELINES TAB -->
+        <div class="tc" id="carousel-tc-editing">
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:15px;font-weight:600">Design guidelines</span>
+            <span style="font-size:12px;color:var(--muted)">Instructions for designer/editor</span>
+          </div>
+          <div class="ep-list" id="carousel-ep-list"></div>
+          <div class="ep-add">
+            <input type="text" id="carousel-ep-inp" placeholder="Add design guideline..." onkeydown="if(event.key==='Enter')addEP('carousel')">
+            <button class="btn btn-sm" style="background:#8B5CF6;color:#fff" onclick="addEP('carousel')">Add</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION: POSTED
+    ═══════════════════════════════════════════════ -->
+    <div class="section-pane" id="sec-posted">
+      <div class="dash-header">
+        <div><h1 class="dash-title">Posted content</h1><div class="dash-sub" id="posted-sub">All content marked as posted</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="loadPosted()">↻ Refresh</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="filterPosted('all',this)" style="border-color:var(--green);color:var(--green)">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPosted('cr',this)">Case Library</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPosted('th',this)">Talking Head</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPosted('bts',this)">BTS</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPosted('carousel',this)">Carousels</button>
+      </div>
+      <div id="posted-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CASE MODAL -->
+<div class="mo hidden" id="case-modal">
+  <div class="modal">
+    <h2 id="cm-title">New case</h2><div class="modal-sub" id="cm-sub">Fill in what you have</div>
+    <div class="fg">
+      <div class="field s2"><label>Patient name</label><input type="text" id="f-name" placeholder="e.g. Ahmed Al-Rashid"></div>
+      <div class="field"><label>Age</label><input type="text" id="f-age" placeholder="34"></div>
+      <div class="field"><label>Gender</label><select id="f-gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+      <div class="field"><label>Days admitted</label><input type="text" id="f-days" placeholder="12 days"></div>
+      <div class="field"><label>Case date</label><input type="date" id="f-date"></div>
+      <div class="field s2"><label>Problem</label><input type="text" id="f-problem"></div>
+      <div class="field s2"><label>Cause</label><input type="text" id="f-cause"></div>
+      <div class="field s2"><label>Treatment</label><input type="text" id="f-treatment"></div>
+      <div class="field s2"><label>Final result</label><input type="text" id="f-result"></div>
+      <div class="field s2"><label>Full notes</label><textarea id="f-notes"></textarea></div>
+      <div class="field s2"><label>Stage</label>
+        <div class="stage-sel">
+          <div class="so sel-cr" data-stage="collect" onclick="selSo(this,'cr')">● Collecting</div>
+          <div class="so" data-stage="document" onclick="selSo(this,'cr')">● Documenting</div>
+          <div class="so" data-stage="script" onclick="selSo(this,'cr')">● Scripting</div>
+          <div class="so" data-stage="voiceover" onclick="selSo(this,'cr')">● Voiceover</div>
+          <div class="so" data-stage="ready" onclick="selSo(this,'cr')" style="grid-column:1/-1">● Ready</div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeMo('case-modal')">Cancel</button>
+      <button class="btn btn-cr" id="cm-save" onclick="saveCase()">Save case</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDIO MODAL -->
+<div class="mo hidden" id="studio-modal">
+  <div class="modal">
+    <h2 id="sm-title">New content</h2><div class="modal-sub" id="sm-sub">Fill in what you have</div>
+    <div class="fg">
+      <div class="field s2" id="sm-fmt-field">
+        <label>Format</label>
+        <div class="fmt-sel">
+          <div class="fo sel-th" data-fmt="direct" onclick="selFmt(this)">Direct to camera<div class="fd">Doctor speaks directly on camera</div></div>
+          <div class="fo" data-fmt="audio" onclick="selFmt(this)">Audio + B-roll<div class="fd">Doctor's audio over B-roll clips</div></div>
+        </div>
+      </div>
+      <div class="field s2 hidden" id="sm-cat-field">
+        <label>BTS category</label>
+        <div class="cat-sel">
+          <div class="co" data-cat="surgery" onclick="selCat(this)">🔬 Surgery / Procedure</div>
+          <div class="co" data-cat="tour" onclick="selCat(this)">🏥 Hospital tour</div>
+          <div class="co" data-cat="daylife" onclick="selCat(this)">☀️ Day in the life</div>
+          <div class="co" data-cat="events" onclick="selCat(this)">🎉 Events & moments</div>
+        </div>
+      </div>
+      <div class="field s2"><label>Title / topic</label><input type="text" id="sm-title-inp" placeholder="e.g. Why early diagnosis matters"></div>
+      <div class="field s2"><label>Brief</label><textarea id="sm-brief"></textarea></div>
+      <div class="field"><label>Platform</label>
+        <select id="sm-platform"><option value="">Select</option><option>Instagram Reels</option><option>YouTube Shorts</option><option>YouTube</option><option>LinkedIn</option><option>Multiple</option></select>
+      </div>
+      <div class="field"><label>Duration</label>
+        <select id="sm-duration"><option value="">Select</option><option>15–30 sec</option><option>30–60 sec</option><option>1–3 min</option><option>3–10 min</option><option>10+ min</option></select>
+      </div>
+      <div class="field"><label>Shoot date</label><input type="date" id="sm-shoot"></div>
+      <div class="field"><label>Assigned to</label><input type="text" id="sm-assigned" placeholder="Name or role"></div>
+      <div class="field s2"><label>Stage</label>
+        <div class="stage-sel" id="sm-stage-sel">
+          <div class="so" data-stage="idea" onclick="selSo(this,'studio')">💡 Idea</div>
+          <div class="so" data-stage="scripting" onclick="selSo(this,'studio')">✍️ Scripting</div>
+          <div class="so" data-stage="shooting" onclick="selSo(this,'studio')">🎬 Shooting</div>
+          <div class="so" data-stage="editing" onclick="selSo(this,'studio')">✂️ Editing</div>
+          <div class="so" data-stage="ready" onclick="selSo(this,'studio')" style="grid-column:1/-1">✅ Ready</div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeMo('studio-modal')">Cancel</button>
+      <button class="btn btn-cr" id="sm-save" onclick="saveStudio()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAGE MODAL -->
+<div class="mo hidden" id="stage-modal">
+  <div class="modal" style="max-width:400px">
+    <h2>Update stage</h2><div class="modal-sub">Where is this in the pipeline?</div>
+    <div class="stage-sel" id="stm-opts" style="gap:8px"></div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeMo('stage-modal')">Cancel</button>
+      <button class="btn btn-cr" onclick="saveStage()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR APP -->
+<div id="editor-app">
+  <nav class="ed-nav">
+    <div class="ed-nav-logo">Case<span>Reel</span></div>
+    <div class="ed-role-pill">✂️ Editor view</div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--muted)" id="ed-nav-email"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="ed-main">
+    <!-- Dashboard list view -->
+    <div id="ed-dash">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div class="ed-section-title">My assignments</div>
+          <div class="ed-section-sub" id="ed-dash-sub">Loading content...</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="edLoadAll()">↻ Refresh</button>
+      </div>
+
+      <!-- Tabs: All / TH / BTS / Cases -->
+      <div class="ed-tabs">
+        <button class="ed-tab act" onclick="edFilt('all',this)">All</button>
+        <button class="ed-tab" onclick="edFilt('th',this)">Talking Head</button>
+        <button class="ed-tab" onclick="edFilt('bts',this)">BTS</button>
+        <button class="ed-tab" onclick="edFilt('cr',this)">Case Library</button>
+      </div>
+
+      <div class="ed-grid" id="ed-grid"></div>
+    </div>
+
+    <!-- Detail view -->
+    <div class="ed-detail" id="ed-detail">
+      <button class="back-btn" onclick="edShowDash()">← Back to assignments</button>
+
+      <div class="ed-detail-header">
+        <div>
+          <div style="font-size:11px;color:var(--hint);margin-bottom:4px" id="ed-det-id"></div>
+          <h1 style="font-family:'Syne',sans-serif;font-size:24px;margin-bottom:6px" id="ed-det-title"></h1>
+          <div id="ed-det-meta" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
+      <!-- Brief -->
+      <div class="ed-info-block" id="ed-brief-block">
+        <h4>Brief</h4>
+        <div id="ed-brief-text" style="font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap"></div>
+      </div>
+
+      <!-- Script -->
+      <div class="ed-info-block" id="ed-script-block">
+        <h4>Script / Shot list</h4>
+        <div class="ed-script-box" id="ed-script-text"></div>
+      </div>
+
+      <!-- Editing guidelines -->
+      <div class="ed-info-block" id="ed-ep-block">
+        <h4>Editing guidelines</h4>
+        <div id="ed-ep-list"></div>
+      </div>
+
+      <!-- Google Drive -->
+      <div class="ed-info-block" id="ed-drive-block">
+        <h4>Google Drive — Raw footage</h4>
+        <div id="ed-drive-content"></div>
+      </div>
+
+      <!-- Media -->
+      <div class="ed-info-block" id="ed-media-block">
+        <h4>Uploaded media <span id="ed-media-count" style="font-weight:400;color:var(--muted)"></span></h4>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="ed-media-tab-all" onclick="edShowMedia('all')">All</button>
+          <button class="btn btn-ghost btn-sm" id="ed-media-tab-photo" onclick="edShowMedia('photo')">📷 Photos</button>
+          <button class="btn btn-ghost btn-sm" id="ed-media-tab-video" onclick="edShowMedia('video')">🎬 Videos</button>
+          <button class="btn btn-ghost btn-sm" id="ed-media-tab-doc" onclick="edShowMedia('doc')">📄 Docs</button>
+        </div>
+        <div class="media-grid" id="ed-media-grid"></div>
+      </div>
+
+      <!-- Final video link -->
+      <div class="ed-final-box">
+        <h4>✅ Submit final video link</h4>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Paste the link to your completed edit (Google Drive, WeTransfer, Dropbox, etc.)</div>
+        <div class="ed-final-inp">
+          <input type="text" id="ed-final-inp" placeholder="https://drive.google.com/...">
+          <button class="btn" style="background:var(--green);color:#000;flex-shrink:0" onclick="edSaveFinal()">Submit link</button>
+        </div>
+        <div id="ed-final-saved" style="margin-top:10px;font-size:12px;color:var(--green);display:none"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lb">
+  <div class="lb-top">
+    <div class="lb-fn" id="lb-fn"></div>
+    <button class="lb-x" onclick="closeLB()">✕</button>
+  </div>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)">›</button>
+  <div id="lb-content"></div>
+  <div id="lb-counter"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPA_URL='https://lxmgefmghojliuxfdjut.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4bWdlZm1naG9qbGl1eGZkanV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNjEyMDYsImV4cCI6MjA5MzYzNzIwNn0.Lhvc_MAekU3SmMlQgV_AUjs1yjGgcs9eATSiZmkVvhc';
+
+const CR_STAGES={collect:{l:'Collecting',p:20,c:'s-collect'},document:{l:'Documenting',p:40,c:'s-document'},script:{l:'Scripting',p:60,c:'s-script'},voiceover:{l:'Voiceover',p:80,c:'s-voiceover'},ready:{l:'Ready',p:100,c:'s-ready'}};
+const ST_STAGES={idea:{l:'Idea',p:10,c:'s-idea'},scripting:{l:'Scripting',p:30,c:'s-scripting'},shooting:{l:'Shooting',p:55,c:'s-shooting'},editing:{l:'Editing',p:80,c:'s-editing'},ready:{l:'Ready',p:100,c:'s-ready'}};
+const FMTS={direct:'Direct to camera',audio:'Audio + B-roll'};
+const CATS={surgery:'Surgery/Procedure',tour:'Hospital tour',daylife:'Day in life',events:'Events & moments'};
+
+let sb,cases=[],thItems=[],btsItems=[],carouselItems=[],curSec='cr';
+let curCrId=null,curThId=null,curBtsId=null,curCarouselId=null;
+let editCrId=null,editStId=null,editStSec=null;
+let crFilter='all',thFilter='all',btsFilter='all',carouselFilter='all';
+let curStageId=null,curStageSec=null,selStageVal='';
+let selCrStage='collect',selSmStage='idea',selFmtVal='direct',selCatVal='';
+let curEPs={th:[],bts:[],carousel:[]},curRefs={th:[],bts:[],carousel:[]},curOthers={th:[],bts:[],carousel:[]},curDrive={th:'',bts:'',carousel:''};
+let lbData=[],lbIdx=0;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load',async()=>{
+  sb=supabase.createClient(SUPA_URL,SUPA_KEY);
+  const{data:{session}}=await sb.auth.getSession();
+  if(session)launchApp(session.user);
+  else{document.getElementById('login-screen').style.display='flex';}
+});
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+let authMode='signin';
+function toggleAuth(){
+  authMode=authMode==='signin'?'signup':'signin';
+  document.getElementById('auth-btn').textContent=authMode==='signin'?'Sign in':'Create account';
+  document.getElementById('auth-toggle').innerHTML=authMode==='signin'?"Don't have an account? <span>Sign up</span>":"Already have an account? <span>Sign in</span>";
+}
+async function doAuth(){
+  const email=document.getElementById('le').value.trim(),pass=document.getElementById('lp').value;
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-btn').innerHTML='<div class="spinner"></div>';
+  const r=authMode==='signin'?await sb.auth.signInWithPassword({email,password:pass}):await sb.auth.signUp({email,password:pass});
+  document.getElementById('auth-btn').textContent=authMode==='signin'?'Sign in':'Create account';
+  if(r.error){document.getElementById('auth-err').textContent=r.error.message;return;}
+  if(authMode==='signup'&&!r.data.session){document.getElementById('auth-err').style.color='var(--green)';document.getElementById('auth-err').textContent='Check email to confirm, then sign in.';return;}
+  launchApp(r.data.user);
+}
+function launchApp(user){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('nav-email').textContent=user.email||'';
+  document.getElementById('nav-av').textContent=(user.email||'?')[0].toUpperCase();
+  // Check role - show app immediately then check role
+  sb.from('profiles').select('role').eq('id',user.id).single().then(({data,error})=>{
+    const role=(data&&data.role)||'admin';
+    if(role==='editor'){
+      document.getElementById('editor-app').style.cssText='display:flex;flex-direction:column;min-height:100vh';
+      document.getElementById('ed-nav-email').textContent=user.email||'';
+      edLoadAll();
+    } else {
+      // Show app first, then load data
+      document.getElementById('app').style.cssText='display:flex;flex-direction:column;min-height:100vh';
+      loadCases();
+      loadStudio('th');
+      loadStudio('bts');
+      loadStudio('carousel');
+      // Load posted count for badge
+      sb.from('cases').select('id',{count:'exact'}).eq('is_posted',true).then(({count:c1})=>{
+        sb.from('studio_content').select('id',{count:'exact'}).eq('is_posted',true).then(({count:c2})=>{
+          document.getElementById('posted-cnt').textContent=(c1||0)+(c2||0);
+        });
+      });
+    }
+  }).catch(()=>{
+    // Fallback — show admin view even if profile fetch fails
+    document.getElementById('app').style.cssText='display:flex;flex-direction:column;min-height:100vh';
+    loadCases();loadStudio('th');loadStudio('bts');loadStudio('carousel');
+  });
+}
+async function doLogout(){await sb.auth.signOut();location.reload();}
+
+// ── SECTION SWITCHING ─────────────────────────────────────────────────────────
+function switchSection(sec){
+  curSec=sec;
+  document.querySelectorAll('.section-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.querySelectorAll('.sec-tab').forEach(t=>t.className='sec-tab');
+  document.getElementById('tab-'+sec).className='sec-tab active-'+sec;
+  if(sec==='posted') loadPosted();
+  if(sec==='carousel'){
+    const dash=document.getElementById('carousel-dash');
+    const detail=document.getElementById('carousel-detail');
+    if(dash) dash.style.display='block';
+    if(detail) detail.style.display='none';
+    loadStudio('carousel');
+  }
+}
+
+// ── CASE LIBRARY ──────────────────────────────────────────────────────────────
+async function loadCases(){
+  document.getElementById('cr-sub').textContent='Loading...';
+  const{data,error}=await sb.from('cases').select('*').order('created_at');
+  if(error){toast('Error: '+error.message,'error');return;}
+  cases=data||[];
+  document.getElementById('cr-sub').textContent=`${cases.length} case${cases.length!==1?'s':''} — live`;
+  renderCrDash();
+}
+
+function renderCrDash(){
+  const filtered=crFilter==='all'?cases:cases.filter(c=>c.stage===crFilter);
+  const counts={};Object.keys(CR_STAGES).forEach(s=>counts[s]=cases.filter(c=>c.stage===s).length);
+  document.getElementById('cr-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${cases.length}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--coral)">${counts.collect||0}</div><div class="stat-label">Collecting</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${counts.document||0}</div><div class="stat-label">Documenting</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--th-light)">${counts.script||0}</div><div class="stat-label">Scripting</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${(counts.voiceover||0)+(counts.ready||0)}</div><div class="stat-label">Near done</div></div>`;
+  document.getElementById('cr-pipe').innerHTML=['all',...Object.keys(CR_STAGES)].map(s=>`
+    <button class="p-btn ${(s==='all'?crFilter==='all':crFilter===s)?'act-cr':''}" onclick="crFilt('${s}',this)">
+      ${s==='all'?'All':CR_STAGES[s].l}
+    </button>`).join('');
+  const grid=document.getElementById('cr-grid');
+  if(!filtered.length){grid.innerHTML='<div class="hint">No cases in this stage</div>';return;}
+  grid.innerHTML=filtered.map(c=>{
+    const s=CR_STAGES[c.stage]||CR_STAGES.collect;
+    return`<div class="case-card" onclick="openCase('${c.id}')">
+      <div class="card-top"><span class="card-id">${c.id}</span><span class="tag ${s.c}">${s.l}</span></div>
+      <div class="card-title">${c.name}</div>
+      <div class="card-meta">${[c.age?c.age+' yrs':'',c.gender,c.days].filter(Boolean).join(' · ')}</div>
+      <div class="card-desc">${c.problem||'No diagnosis yet'}</div>
+      <div class="prog-label"><span>Pipeline</span><span>${s.p}%</span></div>
+      <div class="prog-track"><div class="prog-fill fill-cr" style="width:${s.p}%"></div></div>
+      <div class="card-foot">
+        ${c.script?'<span style="color:var(--green)">✓ Script</span>':''}
+        ${c.vo_notes?'<span style="color:var(--blue)">✓ VO notes</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function crFilt(stage,btn){crFilter=stage;document.querySelectorAll('#cr-pipe .p-btn').forEach(b=>b.classList.remove('act-cr'));btn.classList.add('act-cr');renderCrDash();}
+
+async function openCase(id){
+  curCrId=id;const c=cases.find(x=>x.id===id);const s=CR_STAGES[c.stage]||CR_STAGES.collect;
+  document.getElementById('cr-dash').style.display='none';
+  document.getElementById('cr-detail').style.display='block';
+  document.getElementById('cr-det-id').textContent=c.id;
+  document.getElementById('cr-det-name').textContent=c.name;
+  document.getElementById('cr-det-meta').innerHTML=`<span class="tag ${s.c}">${s.l}</span><span style="font-size:12px;color:var(--muted)">${[c.age?c.age+' yrs':'',c.gender,c.days].filter(Boolean).join(' · ')}</span>`;
+  document.getElementById('cr-age').textContent=c.age||'—';
+  document.getElementById('cr-gender').textContent=c.gender||'—';
+  document.getElementById('cr-days').textContent=c.days||'—';
+  document.getElementById('cr-date').textContent=c.date?new Date(c.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+  document.getElementById('cr-problem').textContent=c.problem||'—';
+  document.getElementById('cr-cause').textContent=c.cause||'—';
+  document.getElementById('cr-treatment').textContent=c.treatment||'—';
+  document.getElementById('cr-result').textContent=c.result||'—';
+  document.getElementById('cr-notes').textContent=c.notes||'No notes.';
+  document.getElementById('cr-script-ta').value=c.script||'';updateCrWC();
+  document.getElementById('cr-vo-notes').value=c.vo_notes||'';
+  showTC('cr','details',document.querySelector('#cr-tabs .tab'));
+  await loadCrMedia(id);
+  renderCrDrive(c.drive_url||'');
+  // Show final video if editor submitted
+  const finalBox=document.getElementById('cr-final-admin');
+  if(c.final_video_url){
+    const safeUrl=c.final_video_url.startsWith('http')?c.final_video_url:'https://'+c.final_video_url;
+    document.getElementById('cr-final-url-display').textContent=c.final_video_url;
+    document.getElementById('cr-final-open-btn').href=safeUrl;
+    finalBox.style.display='flex';
+  } else { finalBox.style.display='none'; }
+}
+function showCrDash(){document.getElementById('cr-detail').style.display='none';document.getElementById('cr-dash').style.display='block';}
+
+async function loadCrMedia(caseId){
+  const{data}=await sb.from('media').select('*').eq('case_id',caseId).order('created_at');
+  const all=data||[];
+  const photos=all.filter(m=>m.type==='photo'),videos=all.filter(m=>m.type==='video'),docs=all.filter(m=>m.type==='doc'),audio=all.filter(m=>m.type==='audio');
+  renderCrMediaGrid('cr-photos',photos,'📷');
+  renderCrMediaGrid('cr-videos',videos,'🎬');
+  renderCrMediaGrid('cr-docs',docs,'📄');
+  renderCrVoFiles(audio);
+  const total=photos.length+videos.length+docs.length;
+  document.getElementById('cr-mc').textContent=total?`(${total})`:'';
+}
+function renderCrMediaGrid(elId,files,icon){
+  const el=document.getElementById(elId);
+  if(!files.length){el.innerHTML=`<div style="font-size:12px;color:var(--hint)">None yet</div>`;return;}
+  el.innerHTML=files.map((f,i)=>`
+    <div class="m-thumb" onclick="openLB(${JSON.stringify(files).replace(/"/g,'&quot;')},${i})">
+      ${f.type==='photo'&&f.public_url?`<img src="${f.public_url}" loading="lazy">`
+        :f.type==='video'&&f.public_url?`<video src="${f.public_url}" muted preload="metadata"></video>`
+        :`<span class="m-icon">${icon}</span>`}
+      <div class="m-lbl">${f.name}</div>
+      <div class="m-del" onclick="event.stopPropagation();deleteCrMedia('${f.id}','${f.storage_path}')">✕</div>
+    </div>`).join('');
+  el.querySelectorAll('video').forEach(v=>{v.addEventListener('loadedmetadata',()=>{v.currentTime=0.5;});});
+}
+function renderCrVoFiles(files){
+  const el=document.getElementById('cr-vo-list');
+  if(!files.length){el.innerHTML='<div style="font-size:12px;color:var(--hint)">None yet</div>';return;}
+  el.innerHTML=files.map(f=>`<div class="vo-file-item">🎙 <span>${f.name}</span>${f.public_url?`<a href="${f.public_url}" target="_blank" style="font-size:11px;color:var(--blue)">Play</a>`:''}</div>`).join('');
+}
+async function handleCrUpload(e){
+  const files=Array.from(e.target.files);if(!files.length)return;
+  const prog=document.getElementById('cr-uprog'),bar=document.getElementById('cr-ubar');
+  prog.style.display='block';bar.style.width='0%';
+  for(let i=0;i<files.length;i++){
+    const file=files[i],path=`${curCrId}/${Date.now()}-${file.name}`;
+    const{error}=await sb.storage.from('case-media').upload(path,file,{upsert:true});
+    if(error){toast('Upload failed: '+error.message,'error');continue;}
+    const{data:{publicUrl}}=sb.storage.from('case-media').getPublicUrl(path);
+    const type=file.type.startsWith('image/')?'photo':file.type.startsWith('video/')?'video':'doc';
+    await sb.from('media').insert({case_id:curCrId,name:file.name,type,storage_path:path,public_url:publicUrl});
+    bar.style.width=((i+1)/files.length*100)+'%';
+    toast(file.name+' uploaded','success');
+  }
+  prog.style.display='none';await loadCrMedia(curCrId);e.target.value='';
+}
+async function handleCrVo(e){
+  for(const file of Array.from(e.target.files)){
+    const path=`${curCrId}/vo-${Date.now()}-${file.name}`;
+    const{error}=await sb.storage.from('case-media').upload(path,file,{upsert:true});
+    if(error){toast('Upload failed','error');continue;}
+    const{data:{publicUrl}}=sb.storage.from('case-media').getPublicUrl(path);
+    await sb.from('media').insert({case_id:curCrId,name:file.name,type:'audio',storage_path:path,public_url:publicUrl});
+    toast(file.name+' uploaded','success');
+  }
+  await loadCrMedia(curCrId);e.target.value='';
+}
+async function deleteCrMedia(id,path){
+  if(!confirm('Delete this file?'))return;
+  await sb.storage.from('case-media').remove([path]);
+  await sb.from('media').delete().eq('id',id);
+  await loadCrMedia(curCrId);toast('Deleted','success');
+}
+function updateCrWC(){const w=document.getElementById('cr-script-ta').value.trim().split(/\s+/).filter(x=>x).length;document.getElementById('cr-wc').textContent=w+' word'+(w!==1?'s':'');}
+document.getElementById('cr-script-ta').addEventListener('input',updateCrWC);
+async function saveCrScript(){
+  const script=document.getElementById('cr-script-ta').value;
+  await sb.from('cases').update({script}).eq('id',curCrId);
+  cases.find(x=>x.id===curCrId).script=script;
+  const s=document.getElementById('cr-ss');s.textContent='Saved ✓';setTimeout(()=>s.textContent='',2500);
+}
+async function saveCrVoNotes(){
+  const vo_notes=document.getElementById('cr-vo-notes').value;
+  await sb.from('cases').update({vo_notes}).eq('id',curCrId);
+  cases.find(x=>x.id===curCrId).vo_notes=vo_notes;
+  toast('VO notes saved','success');
+}
+
+// ── CAROUSEL MEDIA ────────────────────────────────────────────────────────────
+async function handleCarouselUpload(e){
+  const files=Array.from(e.target.files);if(!files.length||!curCarouselId)return;
+  const prog=document.getElementById('carousel-uprog'),bar=document.getElementById('carousel-ubar');
+  prog.style.display='block';bar.style.width='0%';
+  for(let i=0;i<files.length;i++){
+    const file=files[i],path=`carousel/${curCarouselId}/${Date.now()}-${file.name}`;
+    const{error}=await sb.storage.from('case-media').upload(path,file,{upsert:true});
+    if(error){toast('Upload failed: '+error.message,'error');continue;}
+    const{data:{publicUrl}}=sb.storage.from('case-media').getPublicUrl(path);
+    const type=file.type.startsWith('image/')||file.name.match(/\.(png|jpg|jpeg|webp)$/i)?'photo':'doc';
+    await sb.from('studio_media').insert({content_id:curCarouselId,name:file.name,type,storage_path:path,public_url:publicUrl});
+    bar.style.width=((i+1)/files.length*100)+'%';
+    toast(file.name+' uploaded','success');
+  }
+  prog.style.display='none';await loadCarouselMedia(curCarouselId);e.target.value='';
+}
+async function loadCarouselMedia(id){
+  const{data}=await sb.from('studio_media').select('*').eq('content_id',id).order('created_at');
+  const all=data||[];
+  const photos=all.filter(m=>m.type==='photo');
+  const docs=all.filter(m=>m.type==='doc');
+  renderCarouselMediaGrid('carousel-photos',photos,'🖼️');
+  renderCarouselMediaGrid('carousel-docs',docs,'📄');
+}
+function renderCarouselMediaGrid(elId,files,icon){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  if(!files.length){el.innerHTML=`<div style="font-size:12px;color:var(--hint)">None yet</div>`;return;}
+  el.innerHTML=files.map((f,i)=>`
+    <div class="m-thumb" onclick="openLB(${JSON.stringify(files).replace(/"/g,'&quot;')},${i})">
+      ${f.type==='photo'&&f.public_url?`<img src="${f.public_url}" loading="lazy">`:`<span class="m-icon">${icon}</span>`}
+      <div class="m-lbl">${f.name}</div>
+      <div class="m-del" onclick="event.stopPropagation();deleteCarouselMedia('${f.id}','${f.storage_path}')">✕</div>
+    </div>`).join('');
+}
+async function deleteCarouselMedia(id,path){
+  if(!confirm('Delete this file?'))return;
+  await sb.storage.from('case-media').remove([path]);
+  await sb.from('studio_media').delete().eq('id',id);
+  await loadCarouselMedia(curCarouselId);toast('Deleted','success');
+}
+
+// ── CAROUSEL SCRIPT SAVE ──────────────────────────────────────────────────────
+async function loadStudio(sec){
+  const subEl=document.getElementById(sec+'-sub');
+  if(subEl) subEl.textContent='Loading...';
+  try{
+    const{data,error}=await sb.from('studio_content').select('*').eq('content_type',sec).order('created_at',{ascending:false});
+    if(error){
+      if(subEl) subEl.textContent='Error: '+error.message;
+      const grid=document.getElementById(sec+'-grid');
+      if(grid) grid.innerHTML=`<div style="padding:20px;color:#E8503A;font-size:13px">Error loading: ${error.message}</div>`;
+      return;
+    }
+    if(sec==='th') thItems=data||[];
+    else if(sec==='bts') btsItems=data||[];
+    else if(sec==='carousel'){
+      carouselItems=data||[];
+      const cntEl=document.getElementById('carousel-cnt');
+      if(cntEl) cntEl.textContent=carouselItems.length||'';
+    }
+    if(subEl) subEl.textContent=`${(data||[]).length} piece${(data||[]).length!==1?'s':''} — live`;
+    renderStudioDash(sec);
+  }catch(e){
+    if(subEl) subEl.textContent='Error';
+    const grid=document.getElementById(sec+'-grid');
+    if(grid) grid.innerHTML=`<div style="padding:20px;color:#E8503A;font-size:13px">Unexpected error: ${e.message}</div>`;
+  }
+}
+
+function renderStudioDash(sec){
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  const filter=sec==='th'?thFilter:sec==='bts'?btsFilter:carouselFilter;
+  const filtered=filter==='all'?items:items.filter(i=>i.stage===filter);
+  const counts={};Object.keys(ST_STAGES).forEach(s=>counts[s]=items.filter(i=>i.stage===s).length);
+  const ac='act-'+sec;
+  const col=sec==='th'?'var(--th-light)':sec==='carousel'?'#A78BFA':'var(--bts)';
+  const statsEl=document.getElementById(sec+'-stats');
+  const pipeEl=document.getElementById(sec+'-pipe');
+  const grid=document.getElementById(sec+'-grid');
+  if(!statsEl||!pipeEl||!grid) return;
+  statsEl.innerHTML=`
+    <div class="stat-card"><div class="stat-num">${items.length}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${counts.idea||0}</div><div class="stat-label">Ideas</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:${col}">${(counts.scripting||0)+(counts.shooting||0)}</div><div class="stat-label">In production</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--pink)">${counts.editing||0}</div><div class="stat-label">Editing</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)">${counts.ready||0}</div><div class="stat-label">Ready</div></div>`;
+  pipeEl.innerHTML=['all',...Object.keys(ST_STAGES)].map(s=>`
+    <button class="p-btn ${(s==='all'?filter==='all':filter===s)?ac:''}" onclick="stFilt('${sec}','${s}',this)">
+      ${s==='all'?'All':ST_STAGES[s].l}
+    </button>`).join('');
+  if(!filtered.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);font-size:14px">
+      No ${sec==='carousel'?'carousels':sec==='th'?'talking head':'BTS'} content yet.
+      <br><button class="btn" style="margin-top:12px;background:#${sec==='carousel'?'8B5CF6':sec==='th'?'E879F9':'FBBF24'};color:${sec==='carousel'?'#fff':sec==='bts'?'#000':'#fff'}" onclick="openNewStudio('${sec}')">+ Add first ${sec==='carousel'?'carousel':sec==='th'?'talking head':'BTS'}</button>
+    </div>`;
+    return;
+  }
+  grid.innerHTML=filtered.map(c=>{
+    const s=ST_STAGES[c.stage]||ST_STAGES.idea;
+    const fmtLbl=c.format?FMTS[c.format]:'';const catLbl=c.category?CATS[c.category]:'';
+    return`<div class="case-card" onclick="openStudio('${sec}','${c.id}')">
+      <div class="card-top">
+        <span class="card-id">${c.id}</span>
+        <div class="card-tags">
+          <span class="tag ${s.c}">${s.l}</span>
+          ${fmtLbl?`<span class="tag" style="background:var(--th-dim);color:var(--th-light)">${fmtLbl}</span>`:''}
+          ${catLbl?`<span class="tag" style="background:var(--bts-dim);color:var(--bts)">${catLbl}</span>`:''}
+        </div>
+      </div>
+      <div class="card-title">${c.title||'Untitled'}</div>
+      <div class="card-meta">${c.platform||''}${c.duration?' · '+c.duration:''}</div>
+      <div class="card-desc">${(c.brief||'').slice(0,80)}${(c.brief||'').length>80?'...':''}</div>
+      <div class="prog-label"><span>Production</span><span>${s.p}%</span></div>
+      <div class="prog-track"><div class="prog-fill ${sec==='th'?'fill-th':'fill-bts'}" style="width:${s.p}%"></div></div>
+      <div class="card-foot">
+        ${c.script?'<span style="color:var(--green)">✓ Script</span>':''}
+        ${(c.editing_points||[]).length?`<span style="color:${col}">✓ ${c.editing_points.length} edits</span>`:''}
+        ${c.drive_url?'<span style="color:var(--green)">✓ Drive</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function stFilt(sec,stage,btn){
+  if(sec==='th')thFilter=stage;else if(sec==='bts')btsFilter=stage;else carouselFilter=stage;
+  btn.closest('.pipeline-bar').querySelectorAll('.p-btn').forEach(b=>b.classList.remove('act-th','act-bts','act-carousel'));
+  btn.classList.add('act-'+sec);renderStudioDash(sec);
+}
+
+function openStudio(sec,id){
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  const c=items.find(x=>x.id===id);const s=ST_STAGES[c.stage]||ST_STAGES.idea;
+  if(sec==='th')curThId=id;else if(sec==='bts')curBtsId=id;else curCarouselId=id;
+  curEPs[sec]=[...(c.editing_points||[])];
+  curRefs[sec]=[...(c.ref_links||[])];
+  curOthers[sec]=[...(c.other_links||[])];
+  curDrive[sec]=c.drive_url||'';
+  document.getElementById(sec+'-dash').style.display='none';
+  document.getElementById(sec+'-detail').style.display='block';
+  document.getElementById(sec+'-det-id').textContent=c.id;
+  document.getElementById(sec+'-det-name').textContent=c.title||'Untitled';
+  const fmtLbl=c.format?FMTS[c.format]:'';const catLbl=c.category?CATS[c.category]:'';
+  document.getElementById(sec+'-det-meta').innerHTML=`
+    <span class="tag ${s.c}">${s.l}</span>
+    ${fmtLbl?`<span class="tag" style="background:var(--th-dim);color:var(--th-light)">${fmtLbl}</span>`:''}
+    ${catLbl?`<span class="tag" style="background:var(--bts-dim);color:var(--bts)">${catLbl}</span>`:''}
+    ${c.platform?`<span style="font-size:12px;color:var(--muted)">${c.platform}</span>`:''}`;
+
+  // Overview grid
+  document.getElementById(sec+'-ov-grid').innerHTML=`
+    <div class="info-card"><h4>Content info</h4>
+      <div class="info-row"><span class="ik">Format / type</span><span class="iv">${fmtLbl||catLbl||'—'}</span></div>
+      <div class="info-row"><span class="ik">Platform</span><span class="iv">${c.platform||'—'}</span></div>
+      <div class="info-row"><span class="ik">Duration</span><span class="iv">${c.duration||'—'}</span></div>
+      <div class="info-row"><span class="ik">Stage</span><span class="iv"><span class="tag ${s.c}">${s.l}</span></span></div>
+    </div>
+    <div class="info-card"><h4>Production</h4>
+      <div class="info-row"><span class="ik">Shoot date</span><span class="iv">${c.shoot_date?new Date(c.shoot_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'}</span></div>
+      <div class="info-row"><span class="ik">Assigned to</span><span class="iv">${c.assigned_to||'—'}</span></div>
+      <div class="info-row"><span class="ik">Script</span><span class="iv">${c.script?`✓ ${c.script.trim().split(/\s+/).length} words`:'Not yet'}</span></div>
+      <div class="info-row"><span class="ik">Editing points</span><span class="iv">${(c.editing_points||[]).length||'None'}</span></div>
+    </div>
+    <div class="notes-box"><h4>Brief</h4><div class="notes-text">${c.brief||'No brief added.'}</div></div>`;
+
+  // Script
+  const ta=document.getElementById(sec+'-script-ta');
+  if(ta){ta.value=c.script||'';updateStWC(sec);}
+  if(sec==='th'){
+    const ap=document.getElementById('th-audio-pill');
+    if(ap)ap.className=c.format==='audio'?'':'hidden';
+  }
+  renderEPs(sec);renderStRefs(sec);
+  renderTopDrive(sec, c.drive_url||'');
+  // Load carousel media
+  if(sec==='carousel') loadCarouselMedia(id);
+  // Show final video if editor submitted
+  const finalBox=document.getElementById(sec+'-final-admin');
+  if(finalBox){
+    if(c.final_video_url){
+      const safeUrl=c.final_video_url.startsWith('http')?c.final_video_url:'https://'+c.final_video_url;
+      document.getElementById(sec+'-final-url-display').textContent=c.final_video_url;
+      document.getElementById(sec+'-final-open-btn').href=safeUrl;
+      finalBox.style.display='flex';
+    } else { finalBox.style.display='none'; }
+  }
+  showTC(sec,'overview',document.querySelector(`#${sec}-detail .tab`));
+}
+
+function showStudioDash(sec){
+  document.getElementById(sec+'-detail').style.display='none';
+  document.getElementById(sec+'-dash').style.display='block';
+}
+
+// EPs
+function renderEPs(sec){
+  const el=document.getElementById(sec+'-ep-list');
+  const eps=curEPs[sec];
+  if(!eps.length){el.innerHTML='<div style="font-size:12px;color:var(--hint)">No editing points yet</div>';return;}
+  el.innerHTML=eps.map((ep,i)=>`
+    <div class="ep-item">
+      <div class="ep-num ep-${sec}">${i+1}</div>
+      <div class="ep-text">${ep}</div>
+      <div class="ep-del" onclick="removeEP('${sec}',${i})">✕</div>
+    </div>`).join('');
+}
+async function addEP(sec){
+  const v=document.getElementById(sec+'-ep-inp').value.trim();if(!v)return;
+  curEPs[sec].push(v);document.getElementById(sec+'-ep-inp').value='';
+  const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  await sb.from('studio_content').update({editing_points:curEPs[sec]}).eq('id',id);
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  items.find(x=>x.id===id).editing_points=curEPs[sec];
+  renderEPs(sec);
+}
+async function removeEP(sec,i){
+  curEPs[sec].splice(i,1);
+  const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  await sb.from('studio_content').update({editing_points:curEPs[sec]}).eq('id',id);
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  items.find(x=>x.id===id).editing_points=curEPs[sec];
+  renderEPs(sec);
+}
+
+// Refs & Drive
+function renderStRefs(sec){
+  const el=document.getElementById(sec+'-tc-refs');
+  el.innerHTML=`
+    <div class="ref-sec"><h4>Google Drive folder</h4>
+      <div id="${sec}-drive-card" class="drive-card" style="display:${curDrive[sec]?'flex':'none'}">
+        <div class="drive-icon">📁</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">Drive folder linked</div>
+          <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">${curDrive[sec]||''}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openDriveSec('${sec}')">Open</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearDriveSec('${sec}')">Remove</button>
+        </div>
+      </div>
+      <div id="${sec}-drive-empty" class="drive-empty" style="display:${curDrive[sec]?'none':'flex'}">📁 No Drive folder linked yet</div>
+      <div class="drive-inp-row">
+        <input type="text" id="${sec}-drive-inp" placeholder="Paste Google Drive folder URL..." value="${curDrive[sec]||''}">
+        <button class="btn btn-ghost btn-sm" onclick="saveDriveSec('${sec}')">Save link</button>
+      </div>
+    </div>
+    <div class="ref-sec"><h4>Reference reels</h4>
+      <div class="ref-list" id="${sec}-ref-list"></div>
+      <div class="ref-add"><input type="text" id="${sec}-ref-inp" placeholder="Paste reference video URL..."><button class="btn btn-ghost btn-sm" onclick="addRef('${sec}')">Add</button></div>
+    </div>
+    <div class="ref-sec"><h4>Other links</h4>
+      <div class="ref-list" id="${sec}-other-list"></div>
+      <div class="ref-add"><input type="text" id="${sec}-other-inp" placeholder="Mood board, brief doc..."><button class="btn btn-ghost btn-sm" onclick="addOther('${sec}')">Add</button></div>
+    </div>`;
+  renderRefList(sec+'-ref-list',curRefs[sec],'removeRef',''+sec);
+  renderRefList(sec+'-other-list',curOthers[sec],'removeOther',''+sec);
+}
+function renderRefList(elId,links,removeFn,sec){
+  const el=document.getElementById(elId);
+  if(!links||!links.length){el.innerHTML='<div style="font-size:12px;color:var(--hint);padding:4px 0">None yet</div>';return;}
+  el.innerHTML=links.map((u,i)=>`
+    <div class="ref-item">
+      <a href="${u}" target="_blank" rel="noopener">${u}</a>
+      <span class="ref-del" onclick="${removeFn}('${sec}',${i})">✕</span>
+    </div>`).join('');
+}
+async function addRef(sec){const v=document.getElementById(sec+'-ref-inp').value.trim();if(!v)return;curRefs[sec].push(v);const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({ref_links:curRefs[sec]}).eq('id',id);document.getElementById(sec+'-ref-inp').value='';renderStRefs(sec);}
+async function removeRef(sec,i){curRefs[sec].splice(i,1);const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({ref_links:curRefs[sec]}).eq('id',id);renderStRefs(sec);}
+async function addOther(sec){const v=document.getElementById(sec+'-other-inp').value.trim();if(!v)return;curOthers[sec].push(v);const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({other_links:curOthers[sec]}).eq('id',id);document.getElementById(sec+'-other-inp').value='';renderStRefs(sec);}
+async function removeOther(sec,i){curOthers[sec].splice(i,1);const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({other_links:curOthers[sec]}).eq('id',id);renderStRefs(sec);}
+async function saveDriveSec(sec){curDrive[sec]=document.getElementById(sec+'-drive-inp').value.trim();const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({drive_url:curDrive[sec]}).eq('id',id);renderStRefs(sec);toast('Drive link saved','success');}
+function openDriveSec(sec){if(curDrive[sec]){const a=document.createElement('a');a.href=curDrive[sec].startsWith('http')?curDrive[sec]:'https://'+curDrive[sec];a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();document.body.removeChild(a);}}
+async function clearDriveSec(sec){curDrive[sec]='';const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;await sb.from('studio_content').update({drive_url:''}).eq('id',id);renderStRefs(sec);}
+
+// Script
+function updateStWC(sec){const ta=document.getElementById(sec+'-script-ta');if(!ta)return;const w=ta.value.trim().split(/\s+/).filter(x=>x).length;document.getElementById(sec+'-wc').textContent=w+' word'+(w!==1?'s':'');}
+document.getElementById('th-script-ta').addEventListener('input',()=>updateStWC('th'));
+document.getElementById('bts-script-ta').addEventListener('input',()=>updateStWC('bts'));
+document.addEventListener('DOMContentLoaded',()=>{
+  const cta=document.getElementById('carousel-script-ta');
+  if(cta) cta.addEventListener('input',()=>updateStWC('carousel'));
+});
+async function saveStudioScript(sec){
+  const script=document.getElementById(sec+'-script-ta').value;
+  const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  await sb.from('studio_content').update({script}).eq('id',id);
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  items.find(x=>x.id===id).script=script;
+  const s=document.getElementById(sec+'-ss');s.textContent='Saved ✓';setTimeout(()=>s.textContent='',2500);
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function showTC(sec,name,btn){
+  const detail=document.getElementById(sec+'-detail')||document.getElementById('cr-detail');
+  detail.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  detail.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const pane=document.getElementById(sec==='cr'?`cr-tc-${name}`:`${sec}-tc-${name}`);
+  if(pane)pane.classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+// ── CASE MODAL ────────────────────────────────────────────────────────────────
+function nextCrId(){if(!cases.length)return'CR-001';const nums=cases.map(c=>parseInt((c.id||'CR-000').replace('CR-',''))||0);return'CR-'+String(Math.max(...nums)+1).padStart(3,'0');}
+function openNewCase(){
+  editCrId=null;
+  document.getElementById('cm-title').textContent='New case';
+  document.getElementById('cm-sub').textContent='Fill in what you have';
+  document.getElementById('cm-save').textContent='Save case';
+  ['name','age','days','problem','cause','treatment','result','notes'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  document.getElementById('f-gender').value='';document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('#case-modal .so').forEach(o=>o.classList.remove('sel-cr'));
+  document.querySelector('#case-modal .so[data-stage="collect"]').classList.add('sel-cr');
+  selCrStage='collect';document.getElementById('case-modal').classList.remove('hidden');
+}
+function openEditCase(){
+  const c=cases.find(x=>x.id===curCrId);editCrId=c.id;
+  document.getElementById('cm-title').textContent='Edit case';document.getElementById('cm-sub').textContent=c.name;
+  document.getElementById('cm-save').textContent='Save changes';
+  document.getElementById('f-name').value=c.name||'';document.getElementById('f-age').value=c.age||'';
+  document.getElementById('f-gender').value=c.gender||'';document.getElementById('f-days').value=c.days||'';
+  document.getElementById('f-date').value=c.date||'';document.getElementById('f-problem').value=c.problem||'';
+  document.getElementById('f-cause').value=c.cause||'';document.getElementById('f-treatment').value=c.treatment||'';
+  document.getElementById('f-result').value=c.result||'';document.getElementById('f-notes').value=c.notes||'';
+  document.querySelectorAll('#case-modal .so').forEach(o=>o.classList.toggle('sel-cr',o.dataset.stage===c.stage));
+  selCrStage=c.stage;document.getElementById('case-modal').classList.remove('hidden');
+}
+async function saveCase(){
+  const name=document.getElementById('f-name').value.trim();if(!name){toast('Add a name','error');return;}
+  const data={name,age:document.getElementById('f-age').value,gender:document.getElementById('f-gender').value,days:document.getElementById('f-days').value,date:document.getElementById('f-date').value,problem:document.getElementById('f-problem').value,cause:document.getElementById('f-cause').value,treatment:document.getElementById('f-treatment').value,result:document.getElementById('f-result').value,notes:document.getElementById('f-notes').value,stage:selCrStage};
+  if(editCrId){
+    const{error}=await sb.from('cases').update(data).eq('id',editCrId);
+    if(error){toast('Error: '+error.message,'error');return;}
+    Object.assign(cases.find(x=>x.id===editCrId),data);
+    closeMo('case-modal');openCase(editCrId);toast('Saved','success');
+  }else{
+    const id=nextCrId();
+    const{error}=await sb.from('cases').insert({id,...data});
+    if(error){toast('Error: '+error.message,'error');return;}
+    cases.push({id,...data,script:'',vo_notes:''});
+    closeMo('case-modal');renderCrDash();toast('Case created','success');openCase(id);
+  }
+}
+
+// ── STUDIO MODAL ──────────────────────────────────────────────────────────────
+let smSec='th';
+function nextStId(sec){const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;const pfx=sec==='th'?'TH':'BTS';if(!items.length)return pfx+'-001';const nums=items.map(i=>parseInt((i.id||pfx+'-000').replace(pfx+'-',''))||0);return pfx+'-'+String(Math.max(...nums)+1).padStart(3,'0');}
+function openNewStudio(sec){
+  smSec=sec;editStId=null;editStSec=sec;
+  const labels={th:'Talking Head',bts:'BTS',carousel:'Carousel'};
+  document.getElementById('sm-title').textContent='New '+labels[sec];
+  document.getElementById('sm-sub').textContent='Fill in what you have';
+  document.getElementById('sm-save').textContent='Save';
+  document.getElementById('sm-save').className='btn '+(sec==='th'?'btn-th':sec==='bts'?'btn-bts':'');
+  document.getElementById('sm-save').style.background=sec==='carousel'?'#8B5CF6':'';
+  document.getElementById('sm-save').style.color=sec==='carousel'?'#fff':'';
+  document.getElementById('sm-fmt-field').className='field s2'+(sec==='th'?'':' hidden');
+  document.getElementById('sm-cat-field').className='field s2'+(sec==='bts'?'':' hidden');
+  ['sm-title-inp','sm-brief','sm-assigned'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  document.getElementById('sm-platform').value='';document.getElementById('sm-duration').value='';document.getElementById('sm-shoot').value='';
+  document.querySelectorAll('#studio-modal .so').forEach(o=>o.classList.remove('sel-cr','sel-th','sel-bts','sel-carousel'));
+  const ideaEl=document.querySelector('#studio-modal .so[data-stage="idea"]');
+  if(ideaEl) ideaEl.classList.add(sec==='carousel'?'sel-th':'sel-'+sec);
+  selSmStage='idea';selFmtVal='direct';selCatVal='';
+  document.querySelectorAll('.fo').forEach(o=>o.classList.remove('sel-th'));
+  const directEl=document.querySelector('.fo[data-fmt="direct"]');
+  if(directEl) directEl.classList.add('sel-th');
+  document.querySelectorAll('.co').forEach(o=>o.classList.remove('sel-bts'));
+  document.getElementById('studio-modal').classList.remove('hidden');
+}
+function openEditStudio(sec){
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;const c=items.find(x=>x.id===(sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId));
+  smSec=sec;editStId=c.id;editStSec=sec;
+  document.getElementById('sm-title').textContent='Edit';
+  document.getElementById('sm-sub').textContent=c.title||'';
+  document.getElementById('sm-fmt-field').className='field s2'+(sec==='th'?'':' hidden');
+  document.getElementById('sm-cat-field').className='field s2'+(sec==='bts'?'':' hidden');
+  document.getElementById('sm-title-inp').value=c.title||'';document.getElementById('sm-brief').value=c.brief||'';
+  document.getElementById('sm-platform').value=c.platform||'';document.getElementById('sm-duration').value=c.duration||'';
+  document.getElementById('sm-shoot').value=c.shoot_date||'';document.getElementById('sm-assigned').value=c.assigned_to||'';
+  selSmStage=c.stage;selFmtVal=c.format||'direct';selCatVal=c.category||'';
+  document.querySelectorAll('#studio-modal .so').forEach(o=>o.classList.remove('sel-cr','sel-th','sel-bts'));
+  const so=document.querySelector(`#studio-modal .so[data-stage="${c.stage}"]`);if(so)so.classList.add('sel-'+sec);
+  document.querySelectorAll('.fo').forEach(o=>o.classList.toggle('sel-th',o.dataset.fmt===c.format));
+  document.querySelectorAll('.co').forEach(o=>o.classList.toggle('sel-bts',o.dataset.cat===c.category));
+  document.getElementById('studio-modal').classList.remove('hidden');
+}
+function selFmt(el){document.querySelectorAll('.fo').forEach(o=>o.classList.remove('sel-th'));el.classList.add('sel-th');selFmtVal=el.dataset.fmt;}
+function selCat(el){document.querySelectorAll('.co').forEach(o=>o.classList.remove('sel-bts'));el.classList.add('sel-bts');selCatVal=el.dataset.cat;}
+async function saveStudio(){
+  const title=document.getElementById('sm-title-inp').value.trim();if(!title){toast('Add a title','error');return;}
+  const data={title,content_type:smSec,format:smSec==='th'?selFmtVal:null,category:smSec==='bts'?selCatVal:null,brief:document.getElementById('sm-brief').value,platform:document.getElementById('sm-platform').value,duration:document.getElementById('sm-duration').value,shoot_date:document.getElementById('sm-shoot').value||null,assigned_to:document.getElementById('sm-assigned').value,stage:selSmStage};
+  if(editStId){
+    const{error}=await sb.from('studio_content').update(data).eq('id',editStId);
+    if(error){toast('Error: '+error.message,'error');return;}
+    const items=smSec==='th'?thItems:btsItems;Object.assign(items.find(x=>x.id===editStId),data);
+    closeMo('studio-modal');openStudio(smSec,editStId);toast('Saved','success');
+  }else{
+    const id=nextStId(smSec);
+    const{error}=await sb.from('studio_content').insert({id,...data,script:'',editing_points:[],ref_links:[],other_links:[],drive_url:''});
+    if(error){toast('Error: '+error.message,'error');return;}
+    const items=smSec==='th'?thItems:smSec==='bts'?btsItems:carouselItems;
+    items.unshift({id,...data,script:'',editing_points:[],ref_links:[],other_links:[],drive_url:''});
+    closeMo('studio-modal');renderStudioDash(smSec);toast('Created','success');openStudio(smSec,id);
+  }
+}
+
+// ── STAGE MODALS ──────────────────────────────────────────────────────────────
+function openCrStage(){
+  const c=cases.find(x=>x.id===curCrId);curStageId=curCrId;curStageSec='cr';
+  document.getElementById('stm-opts').innerHTML=Object.entries(CR_STAGES).map(([k,v])=>`
+    <div class="so ${k===c.stage?'sel-cr':''}" data-stage="${k}" onclick="selStageOpt(this,'cr')">${v.l}</div>`).join('');
+  selStageVal=c.stage;document.getElementById('stage-modal').classList.remove('hidden');
+}
+function openStudioStage(sec){
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  const c=items.find(x=>x.id===id);curStageId=id;curStageSec=sec;
+  document.getElementById('stm-opts').innerHTML=Object.entries(ST_STAGES).map(([k,v])=>`
+    <div class="so ${k===c.stage?'sel-'+sec:''}" data-stage="${k}" onclick="selStageOpt(this,'${sec}')">${v.l}</div>`).join('');
+  selStageVal=c.stage;document.getElementById('stage-modal').classList.remove('hidden');
+}
+function selStageOpt(el,sec){document.querySelectorAll('#stm-opts .so').forEach(o=>o.classList.remove('sel-cr','sel-th','sel-bts'));el.classList.add('sel-'+sec);selStageVal=el.dataset.stage;}
+async function saveStage(){
+  const tbl=curStageSec==='cr'?'cases':'studio_content';
+  const{error}=await sb.from(tbl).update({stage:selStageVal}).eq('id',curStageId);
+  if(error){toast('Error','error');return;}
+  if(curStageSec==='cr'){cases.find(x=>x.id===curStageId).stage=selStageVal;closeMo('stage-modal');openCase(curStageId);}
+  else{
+    const items=curStageSec==='th'?thItems:curStageSec==='bts'?btsItems:carouselItems;
+    items.find(x=>x.id===curStageId).stage=selStageVal;
+    closeMo('stage-modal');openStudio(curStageSec,curStageId);
+  }
+}
+
+// ── SHARED MODAL HELPERS ──────────────────────────────────────────────────────
+function selSo(el,ctx){
+  const parent=el.closest('.stage-sel');
+  parent.querySelectorAll('.so').forEach(o=>o.classList.remove('sel-cr','sel-th','sel-bts'));
+  if(ctx==='cr'){el.classList.add('sel-cr');selCrStage=el.dataset.stage;}
+  else{el.classList.add('sel-'+smSec);selSmStage=el.dataset.stage;}
+}
+function closeMo(id){document.getElementById(id).classList.add('hidden');}
+document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');}));
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+function openLB(filesJson,idx){
+  try{lbData=typeof filesJson==='string'?JSON.parse(filesJson.replace(/&quot;/g,'"')):filesJson;}catch{return;}
+  lbIdx=idx;showLBItem();
+  document.getElementById('lb').style.display='flex';
+  document.addEventListener('keydown',lbKey);
+}
+function showLBItem(){
+  const f=lbData[lbIdx];
+  document.getElementById('lb-fn').textContent=f.name;
+  document.getElementById('lb-counter').textContent=(lbIdx+1)+' / '+lbData.length;
+  document.getElementById('lb-prev').style.opacity=lbIdx>0?'1':'0.2';
+  document.getElementById('lb-next').style.opacity=lbIdx<lbData.length-1?'1':'0.2';
+  const c=document.getElementById('lb-content');
+  if(f.type==='photo'&&f.public_url){c.innerHTML=`<img src="${f.public_url}" style="max-width:90vw;max-height:83vh;object-fit:contain;border-radius:8px">`;}
+  else if(f.type==='video'&&f.public_url){c.innerHTML=`<video src="${f.public_url}" controls autoplay style="max-width:90vw;max-height:83vh;border-radius:8px;background:#000;outline:none"></video>`;}
+  else if(f.public_url){c.innerHTML=`<div style="background:var(--surface);border-radius:12px;padding:40px;text-align:center"><div style="font-size:40px;margin-bottom:12px">📄</div><div style="font-size:15px;margin-bottom:12px">${f.name}</div><a href="${f.public_url}" target="_blank" class="btn btn-cr btn-sm">Open file</a></div>`;}
+}
+function lbNav(d){const v=document.querySelector('#lb-content video');if(v)v.pause();lbIdx=Math.max(0,Math.min(lbData.length-1,lbIdx+d));showLBItem();}
+function closeLB(){const v=document.querySelector('#lb-content video');if(v)v.pause();document.getElementById('lb').style.display='none';document.removeEventListener('keydown',lbKey);}
+function lbKey(e){if(e.key==='ArrowLeft')lbNav(-1);else if(e.key==='ArrowRight')lbNav(1);else if(e.key==='Escape')closeLB();}
+document.getElementById('lb').addEventListener('click',function(e){if(e.target===this)closeLB();});
+
+// ── EDITOR VIEW ──────────────────────────────────────────────────────────────
+let edAllItems=[],edFiltType='all',edCurItem=null,edCurMedia=[],edMediaFilt='all';
+
+async function edLoadAll(){
+  document.getElementById('ed-dash-sub').textContent='Loading...';
+  const[stRes,crRes]=await Promise.all([
+    sb.from('studio_content').select('*').order('created_at',{ascending:false}),
+    sb.from('cases').select('*').order('created_at',{ascending:false})
+  ]);
+  const studio=(stRes.data||[]).map(x=>({...x,_src:x.content_type}));
+  const cases=(crRes.data||[]).map(x=>({...x,_src:'cr'}));
+  edAllItems=[...studio,...cases];
+  document.getElementById('ed-dash-sub').textContent=`${edAllItems.length} item${edAllItems.length!==1?'s':''} — click any to view brief & media`;
+  edRender();
+}
+
+function edFilt(type,btn){
+  edFiltType=type;
+  document.querySelectorAll('.ed-tab').forEach(t=>t.classList.remove('act'));
+  btn.classList.add('act');
+  edRender();
+}
+
+function edRender(){
+  const items=edFiltType==='all'?edAllItems:edAllItems.filter(i=>i._src===edFiltType);
+  const grid=document.getElementById('ed-grid');
+  if(!items.length){grid.innerHTML='<div class="hint">No items found</div>';return;}
+  grid.innerHTML=items.map(c=>{
+    const isSt=c._src==='th'||c._src==='bts';
+    const stageLabel=isSt?(ST_STAGES[c.stage]||ST_STAGES.idea).l:(CR_STAGES[c.stage]||CR_STAGES.collect).l;
+    const stageClass=isSt?(ST_STAGES[c.stage]||ST_STAGES.idea).c:(CR_STAGES[c.stage]||CR_STAGES.collect).c;
+    const typeLabel=c._src==='th'?'Talking Head':c._src==='bts'?'BTS':'Case Library';
+    const typeColor=c._src==='th'?'var(--th-light)':c._src==='bts'?'var(--bts)':'var(--cr)';
+    return`<div class="ed-card" onclick="edOpenItem('${c.id}','${c._src}')">
+      <div class="ed-card-id">${c.id||''}</div>
+      <div class="ed-card-title">${c.title||c.name||'Untitled'}</div>
+      <div class="ed-card-meta">${c.platform||c.problem||''}</div>
+      <div class="ed-card-foot">
+        <span class="tag" style="background:transparent;border:1px solid var(--border);color:${typeColor}">${typeLabel}</span>
+        <span class="tag ${stageClass}">${stageLabel}</span>
+        ${(isSt?c.drive_url:c.drive_url)?'<span class="tag" style="background:var(--green-dim);color:var(--green)">📁 Drive</span>':''}
+        ${c.final_video_url?'<span class="tag" style="background:var(--green-dim);color:var(--green)">✅ Final submitted</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function edOpenItem(id,src){
+  const item=edAllItems.find(x=>x.id===id&&x._src===src);
+  if(!item)return;
+  edCurItem=item;
+  const isSt=src==='th'||src==='bts';
+  const isCase=src==='cr';
+
+  // Header
+  document.getElementById('ed-det-id').textContent=item.id||'';
+  document.getElementById('ed-det-title').textContent=item.title||item.name||'Untitled';
+  const stageLabel=isSt?(ST_STAGES[item.stage]||ST_STAGES.idea).l:(CR_STAGES[item.stage]||CR_STAGES.collect).l;
+  const stageClass=isSt?(ST_STAGES[item.stage]||ST_STAGES.idea).c:(CR_STAGES[item.stage]||CR_STAGES.collect).c;
+  const typeLabel=src==='th'?'Talking Head':src==='bts'?'BTS':'Case Library';
+  const typeColor=src==='th'?'var(--th-light)':src==='bts'?'var(--bts)':'var(--cr)';
+  document.getElementById('ed-det-meta').innerHTML=`
+    <span class="tag" style="background:transparent;border:1px solid var(--border);color:${typeColor}">${typeLabel}</span>
+    <span class="tag ${stageClass}">${stageLabel}</span>
+    ${item.platform?`<span style="font-size:12px;color:var(--muted)">${item.platform}</span>`:''}`;
+
+  // Brief
+  const briefText=isSt?(item.brief||'No brief added.'):`Problem: ${item.problem||'—'}\nCause: ${item.cause||'—'}\nTreatment: ${item.treatment||'—'}\nResult: ${item.result||'—'}${item.notes?'\n\n'+item.notes:''}`;
+  document.getElementById('ed-brief-text').textContent=briefText.trim()||'No brief added.';
+
+  // Script
+  const scriptText=isSt?(item.script||''):(item.script||'');
+  const scriptBlock=document.getElementById('ed-script-block');
+  if(scriptText.trim()){
+    document.getElementById('ed-script-text').textContent=scriptText;
+    scriptBlock.style.display='block';
+  } else {
+    scriptBlock.style.display='none';
+  }
+
+  // Editing guidelines / points
+  const eps=isSt?(item.editing_points||[]):[];
+  const epBlock=document.getElementById('ed-ep-block');
+  if(eps.length){
+    document.getElementById('ed-ep-list').innerHTML=eps.map((ep,i)=>`
+      <div class="ed-ep-item">
+        <div class="ed-ep-num">${i+1}</div>
+        <div class="ed-ep-text">${ep}</div>
+      </div>`).join('');
+    epBlock.style.display='block';
+  } else {
+    epBlock.style.display='none';
+  }
+
+  // Drive link
+  const driveUrl=item.drive_url||'';
+  const driveBlock=document.getElementById('ed-drive-block');
+  driveBlock.style.display='block';
+  if(driveUrl){
+    const safeUrl=driveUrl.startsWith('http')?driveUrl:'https://'+driveUrl;
+    document.getElementById('ed-drive-content').innerHTML=`
+      <div style="background:var(--surface2);border:1.5px solid var(--green);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">📁</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:2px">Google Drive folder</div>
+          <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${driveUrl}</div>
+        </div>
+        <a href="${safeUrl}" target="_blank" rel="noopener" style="background:var(--green);color:#000;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;flex-shrink:0">Open folder ↗</a>
+      </div>`;
+  } else {
+    document.getElementById('ed-drive-content').innerHTML=`
+      <div style="background:var(--surface2);border:1.5px dashed var(--border2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px">
+        <span style="font-size:20px">📁</span> No Drive folder linked yet — ask admin to add one.
+      </div>`;
+  }
+
+  // Final video link
+  const saved=item.final_video_url||'';
+  document.getElementById('ed-final-inp').value=saved;
+  const savedEl=document.getElementById('ed-final-saved');
+  if(saved){savedEl.style.display='block';savedEl.textContent='✓ Final link submitted: '+saved;}
+  else{savedEl.style.display='none';}
+
+  // Load media
+  edCurMedia=[];
+  edMediaFilt='all';
+  document.getElementById('ed-media-count').textContent='(loading...)';
+  document.getElementById('ed-media-grid').innerHTML='';
+  const tbl=isCase?'case_id':'content_id';
+  const{data:media}=isCase
+    ?await sb.from('media').select('*').eq('case_id',id).order('created_at')
+    :await sb.from('studio_media').select('*').eq('content_id',id).order('created_at');
+  edCurMedia=media||[];
+  document.getElementById('ed-media-count').textContent=`(${edCurMedia.length})`;
+  edRenderMedia();
+
+  document.getElementById('ed-dash').style.display='none';
+  document.getElementById('ed-detail').style.display='block';
+}
+
+function edShowMedia(type){
+  edMediaFilt=type;edRenderMedia();
+}
+
+function edRenderMedia(){
+  const filtered=edMediaFilt==='all'?edCurMedia:edCurMedia.filter(m=>m.type===edMediaFilt);
+  const grid=document.getElementById('ed-media-grid');
+  if(!filtered.length){grid.innerHTML=`<div style="font-size:12px;color:var(--hint);grid-column:1/-1">No ${edMediaFilt==='all'?'':edMediaFilt+' '}files uploaded yet</div>`;return;}
+  grid.innerHTML=filtered.map((f,i)=>`
+    <div class="m-thumb" onclick="openLB(${JSON.stringify(filtered).replace(/"/g,'&quot;')},${i})">
+      ${f.type==='photo'&&f.public_url?`<img src="${f.public_url}" loading="lazy">`
+        :f.type==='video'&&f.public_url?`<video src="${f.public_url}" muted preload="metadata"></video>`
+        :`<span class="m-icon">${f.type==='audio'?'🎙':'📄'}</span>`}
+      <div class="m-lbl">${f.name}</div>
+    </div>`).join('');
+  grid.querySelectorAll('video').forEach(v=>{v.addEventListener('loadedmetadata',()=>{v.currentTime=0.5;});});
+}
+
+async function edSaveFinal(){
+  const url=document.getElementById('ed-final-inp').value.trim();
+  if(!url){toast('Please paste a link first','error');return;}
+  const item=edCurItem;
+  const isSt=item._src==='th'||item._src==='bts';
+  const tbl=isSt?'studio_content':'cases';
+  const{error}=await sb.from(tbl).update({final_video_url:url}).eq('id',item.id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  item.final_video_url=url;
+  const savedEl=document.getElementById('ed-final-saved');
+  savedEl.style.display='block';
+  savedEl.textContent='✓ Final link submitted: '+url;
+  toast('Final link saved!','success');
+}
+
+function edShowDash(){
+  document.getElementById('ed-detail').style.display='none';
+  document.getElementById('ed-dash').style.display='block';
+  edRender();
+}
+
+// ── CASE LIBRARY DRIVE LINK ───────────────────────────────────────────────────
+let curCrDrive='';
+function renderCrDrive(url){
+  curCrDrive=url||'';
+  const linked=document.getElementById('cr-drive-linked');
+  const empty=document.getElementById('cr-drive-empty');
+  if(curCrDrive){
+    linked.style.display='flex';
+    empty.style.display='none';
+    document.getElementById('cr-drive-url-display').textContent=curCrDrive;
+    document.getElementById('cr-drive-open-btn').href=curCrDrive.startsWith('http')?curCrDrive:'https://'+curCrDrive;
+  } else {
+    linked.style.display='none';
+    empty.style.display='flex';
+    document.getElementById('cr-drive-inp').value='';
+  }
+}
+async function saveCrDriveFromInput(){
+  const url=document.getElementById('cr-drive-inp').value.trim();
+  await saveCrDrive(url);
+}
+async function saveCrDrive(url){
+  await sb.from('cases').update({drive_url:url}).eq('id',curCrId);
+  cases.find(x=>x.id===curCrId).drive_url=url;
+  renderCrDrive(url);
+  toast(url?'Drive link saved':'Drive link removed','success');
+}
+
+// ── TH / BTS TOP DRIVE CARD ───────────────────────────────────────────────────
+function renderTopDrive(sec, url){
+  const linked=document.getElementById(sec+'-drive-linked');
+  const empty=document.getElementById(sec+'-drive-empty-top');
+  if(!linked||!empty) return;
+  if(url){
+    linked.style.display='flex';
+    empty.style.display='none';
+    document.getElementById(sec+'-drive-url-display').textContent=url;
+    document.getElementById(sec+'-drive-open-btn').href=url.startsWith('http')?url:'https://'+url;
+  } else {
+    linked.style.display='none';
+    empty.style.display='flex';
+    document.getElementById(sec+'-drive-inp-top').value='';
+  }
+}
+async function quickSaveDrive(sec){
+  const url=document.getElementById(sec+'-drive-inp-top').value.trim();
+  if(!url) return;
+  curDrive[sec]=url;
+  const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  await sb.from('studio_content').update({drive_url:url}).eq('id',id);
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  items.find(x=>x.id===id).drive_url=url;
+  renderTopDrive(sec,url);
+  renderStRefs(sec);
+  toast('Drive link saved','success');
+}
+async function quickClearDrive(sec){
+  curDrive[sec]='';
+  const id=sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  await sb.from('studio_content').update({drive_url:''}).eq('id',id);
+  const items=sec==='th'?thItems:sec==='bts'?btsItems:carouselItems;
+  items.find(x=>x.id===id).drive_url='';
+  renderTopDrive(sec,'');
+  renderStRefs(sec);
+  toast('Drive link removed','success');
+}
+
+// ── POSTED SECTION ────────────────────────────────────────────────────────────
+let postedItems=[];
+let postedFilter='all';
+
+async function loadPosted(){
+  document.getElementById('posted-sub').textContent='Loading...';
+  document.getElementById('posted-grid').innerHTML='<div style="color:var(--muted);font-size:13px;padding:20px">Loading...</div>';
+  try{
+    const[crRes,stRes]=await Promise.all([
+      sb.from('cases').select('*').eq('is_posted',true).order('created_at',{ascending:false}),
+      sb.from('studio_content').select('*').eq('is_posted',true).order('created_at',{ascending:false})
+    ]);
+    if(crRes.error) throw new Error('Cases error: '+crRes.error.message);
+    if(stRes.error) throw new Error('Studio error: '+stRes.error.message);
+    const crItems=(crRes.data||[]).map(x=>({...x,_src:'cr'}));
+    const stItems=(stRes.data||[]).map(x=>({...x,_src:x.content_type||'th'}));
+    postedItems=[...crItems,...stItems];
+    document.getElementById('posted-cnt').textContent=postedItems.length;
+    document.getElementById('posted-sub').textContent=`${postedItems.length} piece${postedItems.length!==1?'s':''} posted`;
+    renderPosted();
+  }catch(e){
+    document.getElementById('posted-sub').textContent='Error loading';
+    document.getElementById('posted-grid').innerHTML=`<div style="color:var(--red,#E8503A);font-size:13px;padding:20px;background:var(--surface);border-radius:12px">Error: ${e.message}</div>`;
+  }
+}
+
+function filterPosted(f,btn){
+  postedFilter=f;
+  document.querySelectorAll('#sec-posted .btn').forEach(b=>b.style.borderColor='');
+  btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
+  renderPosted();
+}
+
+function renderPosted(){
+  const items=postedFilter==='all'?postedItems:postedItems.filter(x=>x._src===postedFilter);
+  const grid=document.getElementById('posted-grid');
+  if(!items.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);font-size:14px">No posted content yet. Mark items as posted to see them here.</div>`;
+    return;
+  }
+  const typeLabel=s=>s==='th'?'Talking Head':s==='bts'?'BTS':s==='carousel'?'Carousel':'Case Library';
+  const typeColor=s=>s==='th'?'var(--th-light)':s==='bts'?'var(--bts)':s==='carousel'?'#A78BFA':'var(--cr)';
+
+  // Sort by posted_at date
+  const sorted=[...items].sort((a,b)=>new Date(a.posted_at||a.created_at)-new Date(b.posted_at||b.created_at));
+
+  // Tracker table view
+  grid.style.display='block';
+  grid.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">#</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Date posted</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Day</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Content</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Type</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Final video</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map((c,i)=>{
+            const d=c.posted_at?new Date(c.posted_at):c.updated_at?new Date(c.updated_at):null;
+            const dateStr=d?d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+            const dayStr=d?d.toLocaleDateString('en-GB',{weekday:'long'}):'—';
+            const title=c.title||c.name||'Untitled';
+            const src=c._src;
+            return`<tr style="border-bottom:1px solid var(--border);transition:background .12s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+              <td style="padding:10px 14px;color:var(--muted);font-size:12px">${i+1}</td>
+              <td style="padding:10px 14px;color:var(--text);font-weight:500;white-space:nowrap">${dateStr}</td>
+              <td style="padding:10px 14px;color:var(--muted);white-space:nowrap">${dayStr}</td>
+              <td style="padding:10px 14px;color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</td>
+              <td style="padding:10px 14px"><span style="font-size:11px;padding:3px 8px;border-radius:6px;background:transparent;border:1px solid var(--border);color:${typeColor(src)}">${typeLabel(src)}</span></td>
+              <td style="padding:10px 14px">
+                ${c.final_video_url
+                  ?`<a href="${c.final_video_url}" target="_blank" style="color:var(--green);font-size:12px;text-decoration:none;display:flex;align-items:center;gap:4px">📹 View ↗</a>`
+                  :`<span style="color:var(--muted);font-size:12px">Not submitted</span>`}
+              </td>
+              <td style="padding:10px 14px">
+                <button onclick="unmarkPosted('${c.id}','${c._src}')" style="font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer">Unmark</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function markAsPosted(sec){
+  const id=sec==='cr'?curCrId:sec==='th'?curThId:sec==='bts'?curBtsId:curCarouselId;
+  if(!id) return;
+  // Ask for posted date
+  const dateVal=await showDatePicker();
+  if(!dateVal) return; // cancelled
+  const tbl=sec==='cr'?'cases':'studio_content';
+  const{error}=await sb.from(tbl).update({is_posted:true,posted_at:dateVal}).eq('id',id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  toast('Marked as posted! 🎉','success');
+  const btn=document.getElementById(sec+'-posted-btn');
+  if(btn){
+    btn.textContent='✓ Posted '+new Date(dateVal).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    btn.style.background='var(--green-dim)';
+    btn.style.color='var(--green)';
+    btn.style.border='1px solid var(--green)';
+  }
+  loadPosted();
+  if(sec==='cr') loadCases(); else loadStudio(sec);
+}
+
+function showDatePicker(){
+  return new Promise(resolve=>{
+    // Create modal
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
+    overlay.innerHTML=`
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+        <h3 style="font-family:'Syne',sans-serif;font-size:16px;margin-bottom:4px;color:var(--text)">When was this posted?</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Select the date this content went live</p>
+        <input type="date" id="post-date-inp" value="${new Date().toISOString().split('T')[0]}"
+          style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:16px;outline:none">
+        <div style="display:flex;gap:8px">
+          <button id="post-date-cancel" style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px">Cancel</button>
+          <button id="post-date-confirm" style="flex:1;padding:9px;border-radius:8px;border:none;background:var(--green);color:#000;cursor:pointer;font-size:13px;font-weight:500">Confirm posted ✓</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('post-date-cancel').onclick=()=>{document.body.removeChild(overlay);resolve(null);};
+    document.getElementById('post-date-confirm').onclick=()=>{
+      const val=document.getElementById('post-date-inp').value;
+      document.body.removeChild(overlay);
+      resolve(val?new Date(val).toISOString():new Date().toISOString());
+    };
+  });
+}
+
+async function unmarkPosted(id,src){
+  const tbl=src==='cr'?'cases':'studio_content';
+  await sb.from(tbl).update({is_posted:false,posted_at:null}).eq('id',id);
+  toast('Removed from posted','success');
+  loadPosted();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastT;
+function toast(msg,type='success'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+type;clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3200);}
+</script>
+</body>
+</html>
